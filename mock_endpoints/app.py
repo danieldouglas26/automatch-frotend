@@ -82,4 +82,4 @@ def create_booking():
 if __name__ == '__main__':
     # Roda o servidor na porta 8080 que está configurada no seu Postman
     print("🚀 Servidor AutoMatch-Backend rodando na porta 8080...")
-    app.run(port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
