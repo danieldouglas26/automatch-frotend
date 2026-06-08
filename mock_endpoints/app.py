@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify
 import uuid
+from flask_cors import CORS  # <--- 1. Adicione essa importação
 
 app = Flask(__name__)
-
+CORS(app)
 # Nosso "Banco de Dados" em memória
 db = {
     "users": [],
