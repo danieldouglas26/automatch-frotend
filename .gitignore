@@ -20,3 +20,5 @@ web-build/
 # Cache
 .turbo/
 .pnpm-store/
+
+mock_endpoints/.venv/
