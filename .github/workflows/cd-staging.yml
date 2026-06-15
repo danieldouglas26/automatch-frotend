@@ -1,0 +1,68 @@
+name: CD - Frontend Staging
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  publish-and-deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Web App
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://187.124.128.145:8080/api/v1
+          tags: |
+            ghcr.io/${{ github.repository }}/web-app:develop
+            ghcr.io/${{ github.repository }}/web-app:${{ github.sha }}
+
+      - name: Prepare VPS Directories
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: mkdir -p automatch-frontend/staging
+
+      - name: Copy docker-compose to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          source: "docker-compose.frontend.yml"
+          target: "automatch-frontend/staging"
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd automatch-frontend/staging
+            echo "IMAGE_TAG=${{ github.sha }}" > .env
+            echo "GITHUB_REPOSITORY=${{ github.repository }}" >> .env
+            docker compose -p automatch-web-staging -f docker-compose.frontend.yml pull
+            docker compose -p automatch-web-staging -f docker-compose.frontend.yml up -d
+            docker system prune -af
