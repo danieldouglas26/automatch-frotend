@@ -81,7 +81,18 @@ export const ProfessionalService = {
 export const BookingService = {
   // Equivalente a BookingController.create
   create: async (data: BookingRequest): Promise<BookingResponse> => {
-    const response = await api.post('/bookings', data);
+    // Gerador de UUID compatível com Web e Mobile
+    const idempotencyKey = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+
+    const response = await api.post('/bookings', data, {
+      headers: {
+        'Idempotency-Key': idempotencyKey
+      }
+    });
     return response.data;
   }
 };
