@@ -39,7 +39,7 @@ COPY --from=installer /app/ .
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
-RUN pnpm run build --filter=web
+RUN pnpm --filter web build
 
 # ==========================================
 # STAGE 4: Production Runner
