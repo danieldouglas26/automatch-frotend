@@ -1,6 +1,5 @@
-// apps/mobile/src/screens/MechanicDashboard.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfessionalService, UpdateProfessionalRequest } from '@automatch/api-client';
 
@@ -22,7 +21,6 @@ export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => v
         services: services.split(',').map(s => s.trim()),
         active: true
       };
-      // Atualiza usando o ID da sessão
       await ProfessionalService.update(user!.id, payload);
       Alert.alert('Sucesso', '✅ Seu perfil foi atualizado no catálogo!');
     } catch (err: any) {
@@ -64,31 +62,33 @@ export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => v
           
           <View style={styles.formGroup}>
              <Text style={styles.label}>Nome</Text>
-             <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} placeholderTextColor="#71717a" />
+             <TextInput style={[styles.input, isUpdating && { opacity: 0.5 }]} value={firstName} onChangeText={setFirstName} placeholderTextColor="#71717a" editable={!isUpdating} />
           </View>
           
           <View style={styles.formGroup}>
              <Text style={styles.label}>Sobrenome</Text>
-             <TextInput style={styles.input} value={lastName} onChangeText={setLastName} placeholderTextColor="#71717a" />
+             <TextInput style={[styles.input, isUpdating && { opacity: 0.5 }]} value={lastName} onChangeText={setLastName} placeholderTextColor="#71717a" editable={!isUpdating} />
           </View>
 
           <View style={styles.formGroup}>
              <Text style={styles.label}>Especialidade Principal</Text>
-             <TextInput style={styles.input} value={specialty} onChangeText={setSpecialty} placeholder="Ex: Eletricista Automotivo" placeholderTextColor="#71717a" />
+             <TextInput style={[styles.input, isUpdating && { opacity: 0.5 }]} value={specialty} onChangeText={setSpecialty} placeholder="Ex: Eletricista Automotivo" placeholderTextColor="#71717a" editable={!isUpdating} />
           </View>
 
           <View style={styles.formGroup}>
              <Text style={styles.label}>Serviços Oferecidos (separados por vírgula)</Text>
              <TextInput 
-                style={styles.input} 
+                style={[styles.input, isUpdating && { opacity: 0.5 }]} 
                 value={services} 
                 onChangeText={setServices} 
                 placeholder="Ex: Alinhamento, Balanceamento" 
                 placeholderTextColor="#71717a" 
+                editable={!isUpdating}
              />
           </View>
 
-          <TouchableOpacity style={styles.updateBtn} onPress={handleUpdate} disabled={isUpdating}>
+          <TouchableOpacity style={[styles.updateBtn, isUpdating && { opacity: 0.5 }, { flexDirection: 'row', justifyContent: 'center', gap: 8 }]} onPress={handleUpdate} disabled={isUpdating}>
+             {isUpdating && <ActivityIndicator size="small" color="#fff" />}
              <Text style={styles.updateTxt}>{isUpdating ? 'Salvando...' : 'Atualizar Catálogo'}</Text>
           </TouchableOpacity>
         </View>

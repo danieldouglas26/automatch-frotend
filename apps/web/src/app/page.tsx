@@ -141,6 +141,7 @@ function ClientDashboard({ user }: { user: any }) {
   const [specialty, setSpecialty] = useState('');
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [bookingIds, setBookingIds] = useState<Record<string, boolean>>({});
 
   const handleSearch = async () => {
     setIsSearching(true);
@@ -156,6 +157,7 @@ function ClientDashboard({ user }: { user: any }) {
   };
 
   const handleBooking = async (prof: any) => {
+    setBookingIds(prev => ({ ...prev, [prof.id]: true }));
     try {
       const response = await BookingService.create({
         clientId: user.id,
@@ -166,7 +168,6 @@ function ClientDashboard({ user }: { user: any }) {
         appointmentTime: new Date().toISOString()
       });
 
-      // Salva localmente para manter a interface dinâmica
       const newBooking = {
         id: response.id || Math.random().toString(),
         professionalName: `${prof.firstName} ${prof.lastName}`,
@@ -180,7 +181,6 @@ function ClientDashboard({ user }: { user: any }) {
       existingBookings.unshift(newBooking);
       localStorage.setItem('@AutoMatch:bookings', JSON.stringify(existingBookings));
 
-      // Também espelha nos pedidos recebidos do mecânico (para testes simulados localmente)
       const newRequest = {
         id: newBooking.id,
         clientName: `${user.firstName} ${user.lastName}`,
@@ -197,6 +197,8 @@ function ClientDashboard({ user }: { user: any }) {
     } catch (err: any) {
       const traceId = err.response?.data?.requestId;
       toast.error(`Erro ao tentar agendar. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
+    } finally {
+      setBookingIds(prev => ({ ...prev, [prof.id]: false }));
     }
   };
 
@@ -210,13 +212,21 @@ function ClientDashboard({ user }: { user: any }) {
             placeholder="Ex: Mecânico, Eletricista, Borracharia..." 
             value={specialty}
             onChange={(e) => setSpecialty(e.target.value)}
-            className="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+            disabled={isSearching}
+            className="flex-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50 text-white"
           />
           <button 
             onClick={handleSearch}
-            className="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-medium transition-all"
+            disabled={isSearching}
+            className="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-medium transition-all disabled:opacity-50 flex items-center gap-2"
           >
-            {isSearching ? 'Buscando...' : 'Pesquisar'}
+            {isSearching && (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
+            <span>{isSearching ? 'Buscando...' : 'Pesquisar'}</span>
           </button>
         </div>
       </div>
@@ -226,7 +236,7 @@ function ClientDashboard({ user }: { user: any }) {
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Resultados ({professionals.length})</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {professionals.map((prof) => (
-              <div key={prof.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex flex-col justify-between">
+              <div key={prof.id} className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl flex flex-col justify-between animate-fade-in">
                 <div>
                   <h4 className="font-bold text-lg">{prof.firstName} {prof.lastName}</h4>
                   <span className="inline-block mt-1 bg-indigo-500/10 text-indigo-400 text-xs px-2 py-1 rounded-md border border-indigo-500/20">{prof.specialty}</span>
@@ -234,9 +244,16 @@ function ClientDashboard({ user }: { user: any }) {
                 </div>
                 <button 
                   onClick={() => handleBooking(prof)}
-                  className="mt-6 w-full bg-zinc-800 hover:bg-white hover:text-black py-2.5 rounded-lg text-sm font-semibold transition-all"
+                  disabled={bookingIds[prof.id]}
+                  className="mt-6 w-full bg-zinc-800 hover:bg-white hover:text-black py-2.5 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Agendar Serviço
+                  {bookingIds[prof.id] && (
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  )}
+                  <span>{bookingIds[prof.id] ? 'Agendando...' : 'Agendar Serviço'}</span>
                 </button>
               </div>
             ))}
@@ -258,24 +275,7 @@ function BookingsTab({ user }: { user: any }) {
     if (data) {
       setBookings(JSON.parse(data));
     } else {
-      const defaultBookings = [
-        {
-          id: '1',
-          professionalName: 'Carlos Silva (Mecânico)',
-          specialty: 'Mecânica Geral',
-          serviceName: 'Troca de Óleo e Filtro',
-          appointmentTime: '18/06/2026 às 14:00',
-          status: 'APROVADO'
-        },
-        {
-          id: '2',
-          professionalName: 'Oficina Roda Livre',
-          specialty: 'Freios & Suspensão',
-          serviceName: 'Revisão do Sistema de Freio',
-          appointmentTime: '20/06/2026 às 09:30',
-          status: 'PENDENTE'
-        }
-      ];
+      const defaultBookings: any[] = [];
       localStorage.setItem('@AutoMatch:bookings', JSON.stringify(defaultBookings));
       setBookings(defaultBookings);
     }
@@ -355,26 +355,32 @@ function MechanicDashboard({ user }: { user: any }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm text-zinc-400">Nome</label>
-            <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
+            <input type="text" required disabled={isUpdating} value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white disabled:opacity-50" />
           </div>
           <div>
             <label className="text-sm text-zinc-400">Sobrenome</label>
-            <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
+            <input type="text" required disabled={isUpdating} value={lastName} onChange={e => setLastName(e.target.value)} className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white disabled:opacity-50" />
           </div>
         </div>
         
         <div>
           <label className="text-sm text-zinc-400">Especialidade Principal</label>
-          <input type="text" value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="Ex: Mecânico de Motores" className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
+          <input type="text" required disabled={isUpdating} value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="Ex: Mecânico de Motores" className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white disabled:opacity-50" />
         </div>
 
         <div>
           <label className="text-sm text-zinc-400">Serviços Oferecidos (separados por vírgula)</label>
-          <input type="text" value={services} onChange={e => setServices(e.target.value)} placeholder="Ex: Alinhamento, Balanceamento, Troca de Óleo" className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
+          <input type="text" required disabled={isUpdating} value={services} onChange={e => setServices(e.target.value)} placeholder="Ex: Alinhamento, Balanceamento, Troca de Óleo" className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white disabled:opacity-50" />
         </div>
 
-        <button type="submit" disabled={isUpdating} className="w-full py-3 mt-4 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl transition-all">
-          {isUpdating ? 'Salvando...' : 'Atualizar Catálogo'}
+        <button type="submit" disabled={isUpdating} className="w-full py-3 mt-4 bg-indigo-600 hover:bg-indigo-500 font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+          {isUpdating && (
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          )}
+          <span>{isUpdating ? 'Salvando...' : 'Atualizar Catálogo'}</span>
         </button>
       </form>
     </div>
@@ -392,24 +398,7 @@ function RequestsTab({ user }: { user: any }) {
     if (data) {
       setRequests(JSON.parse(data));
     } else {
-      const defaultRequests = [
-        {
-          id: '101',
-          clientName: 'Daniel Douglas',
-          clientEmail: 'daniel@email.com',
-          serviceName: 'Revisão Geral do Motor',
-          appointmentTime: '16/06/2026 às 10:00',
-          status: 'PENDENTE'
-        },
-        {
-          id: '102',
-          clientName: 'Amanda Lima',
-          clientEmail: 'amanda@email.com',
-          serviceName: 'Alinhamento & Balanceamento',
-          appointmentTime: '17/06/2026 às 15:30',
-          status: 'APROVADO'
-        }
-      ];
+      const defaultRequests: any[] = [];
       localStorage.setItem('@AutoMatch:requests', JSON.stringify(defaultRequests));
       setRequests(defaultRequests);
     }

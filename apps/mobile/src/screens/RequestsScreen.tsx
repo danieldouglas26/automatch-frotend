@@ -13,24 +13,7 @@ export default function RequestsScreen({ onOpenMenu }: { onOpenMenu?: () => void
         if (stored) {
           setRequests(JSON.parse(stored));
         } else {
-          const defaultRequests = [
-            {
-              id: '101',
-              clientName: 'Daniel Douglas',
-              clientEmail: 'daniel@email.com',
-              serviceName: 'Revisão Geral do Motor',
-              appointmentTime: '16/06/2026 às 10:00',
-              status: 'PENDENTE'
-            },
-            {
-              id: '102',
-              clientName: 'Amanda Lima',
-              clientEmail: 'amanda@email.com',
-              serviceName: 'Alinhamento & Balanceamento',
-              appointmentTime: '17/06/2026 às 15:30',
-              status: 'APROVADO'
-            }
-          ];
+          const defaultRequests: any[] = [];
           await SecureStore.setItemAsync('automatch_requests', JSON.stringify(defaultRequests));
           setRequests(defaultRequests);
         }

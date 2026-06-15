@@ -96,8 +96,8 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 p-1 bg-zinc-900 rounded-xl border border-zinc-800">
-            <button type="button" onClick={() => setRole(Role.CLIENT)} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === Role.CLIENT ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}>Usuário Comum</button>
-            <button type="button" onClick={() => setRole(Role.MECHANIC)} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === Role.MECHANIC ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}>Mecânico / Oficina</button>
+            <button type="button" disabled={submitting} onClick={() => setRole(Role.CLIENT)} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === Role.CLIENT ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'} disabled:opacity-50`}>Usuário Comum</button>
+            <button type="button" disabled={submitting} onClick={() => setRole(Role.MECHANIC)} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === Role.MECHANIC ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'} disabled:opacity-50`}>Mecânico / Oficina</button>
           </div>
 
           {error && <div className="p-3 text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg">{error}</div>}
@@ -108,33 +108,41 @@ export default function LoginPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-zinc-300">Nome</label>
-                  <input type="text" required value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none" />
+                  <input type="text" required disabled={submitting} value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none disabled:opacity-50" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-zinc-300">Sobrenome</label>
-                  <input type="text" required value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none" />
+                  <input type="text" required disabled={submitting} value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none disabled:opacity-50" />
                 </div>
               </div>
             )}
             
             <div className="space-y-1">
               <label className="text-sm font-medium text-zinc-300">E-mail</label>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="exemplo@dominio.com" className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none" />
+              <input type="email" required disabled={submitting} value={email} onChange={(e) => setEmail(e.target.value)} placeholder="exemplo@dominio.com" className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none disabled:opacity-50" />
             </div>
 
             <div className="space-y-1">
               <label className="text-sm font-medium text-zinc-300">Senha</label>
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none" />
+              <input type="password" required disabled={submitting} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none disabled:opacity-50" />
             </div>
 
-            <button type="submit" disabled={submitting} className="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl shadow-lg transition-all disabled:opacity-50 hover:-translate-y-[1px] active:translate-y-0">
-              {submitting ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')}
+            <button type="submit" disabled={submitting} className="w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl shadow-lg transition-all disabled:opacity-50 hover:-translate-y-[1px] active:translate-y-0 flex items-center justify-center gap-2">
+              {submitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Aguarde...</span>
+                </>
+              ) : (isLogin ? 'Entrar' : 'Cadastrar')}
             </button>
           </form>
 
           <div className="text-center text-sm text-zinc-400 pt-4">
             {isLogin ? "Não possui uma conta? " : "Já possui uma conta? "}
-            <button onClick={handleSwitchMode} className="font-medium text-indigo-400 hover:underline">
+            <button onClick={handleSwitchMode} disabled={submitting} className="font-medium text-indigo-400 hover:underline disabled:opacity-50">
               {isLogin ? "Cadastre-se" : "Faça Login"}
             </button>
           </div>

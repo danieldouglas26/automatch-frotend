@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfessionalService, BookingService } from '@automatch/api-client';
 import * as SecureStore from 'expo-secure-store';
@@ -8,8 +8,11 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
   const { user, logout } = useAuth(); 
   const [specialty, setSpecialty] = useState('');
   const [professionals, setProfessionals] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [bookingIds, setBookingIds] = useState<Record<string, boolean>>({});
 
   const handleSearch = async () => {
+    setIsSearching(true);
     try {
       const results = await ProfessionalService.search(specialty);
       setProfessionals(results);
@@ -17,10 +20,13 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
       const traceId = err.response?.data?.requestId;
       const msg = traceId ? `(Trace ID: ${traceId})` : '';
       Alert.alert('Erro', `Não foi possível buscar profissionais ${msg}`);
+    } finally {
+      setIsSearching(false);
     }
   };
 
   const handleBooking = async (prof: any) => {
+    setBookingIds(prev => ({ ...prev, [prof.id]: true }));
     try {
       const response = await BookingService.create({
         clientId: user!.id,
@@ -65,6 +71,8 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
       const traceId = err.response?.data?.requestId;
       const msg = traceId ? `(Trace ID: ${traceId})` : '';
       Alert.alert('Erro', `Falha ao agendar serviço. ${msg}`);
+    } finally {
+      setBookingIds(prev => ({ ...prev, [prof.id]: false }));
     }
   };
 
@@ -91,14 +99,19 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
 
       <View style={styles.searchBox}>
         <TextInput 
-          style={styles.input} 
+          style={[styles.input, isSearching && { opacity: 0.5 }]} 
           placeholder="Buscar por ex: Mecânico..." 
           placeholderTextColor="#71717a" 
           value={specialty} 
           onChangeText={setSpecialty} 
+          editable={!isSearching}
         />
-        <TouchableOpacity style={styles.searchBtn} onPress={handleSearch}>
-          <Text style={styles.searchTxt}>Buscar</Text>
+        <TouchableOpacity style={[styles.searchBtn, isSearching && { opacity: 0.5 }]} onPress={handleSearch} disabled={isSearching}>
+          {isSearching ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.searchTxt}>Buscar</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -110,8 +123,13 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
             <Text style={styles.cardTitle}>{item.firstName} {item.lastName}</Text>
             <Text style={styles.cardTag}>{item.specialty}</Text>
             <Text style={styles.cardDesc}>Serviços: {item.services?.join(', ')}</Text>
-            <TouchableOpacity style={styles.bookBtn} onPress={() => handleBooking(item)}>
-              <Text style={styles.bookTxt}>Agendar Serviço</Text>
+            <TouchableOpacity 
+              style={[styles.bookBtn, bookingIds[item.id] && { opacity: 0.5 }, { flexDirection: 'row', justifyContent: 'center', gap: 8 }]} 
+              onPress={() => handleBooking(item)}
+              disabled={bookingIds[item.id]}
+            >
+              {bookingIds[item.id] && <ActivityIndicator size="small" color="#fff" />}
+              <Text style={styles.bookTxt}>{bookingIds[item.id] ? 'Agendando...' : 'Agendar Serviço'}</Text>
             </TouchableOpacity>
           </View>
         )}

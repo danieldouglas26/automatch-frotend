@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { RegisterRequest, Role } from '@automatch/api-client';
 import Toast from 'react-native-toast-message';
@@ -46,19 +46,14 @@ export default function LoginScreen() {
       console.log('Mensagem de erro:', err.message);
       
       if (err.response) {
-        // O servidor respondeu com um status de erro (ex: 400, 401, 404, 500)
         console.log('Status HTTP:', err.response.status);
         console.log('Resposta do Backend:', err.response.data);
       } else if (err.request) {
-        // A requisição foi feita, mas não houve resposta (Erro de Rede/CORS/IP errado)
         console.log('⚠️ Nenhuma resposta do servidor. Erro de rede ou CORS.');
-        console.log('DICA: O seu app mobile está conseguindo acessar a URL do seu .env?');
       } else {
-        // Algo aconteceu ao montar a requisição
         console.log('Erro desconhecido:', err);
       }
       console.log('-------------------------------\n');
-      // =============================================
 
       Toast.show({
         type: 'error',
@@ -83,30 +78,31 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.roleContainer}>
-          <TouchableOpacity style={[styles.roleButton, role === Role.CLIENT && styles.roleActive]} onPress={() => setRole(Role.CLIENT)}>
+          <TouchableOpacity style={[styles.roleButton, role === Role.CLIENT && styles.roleActive]} onPress={() => setRole(Role.CLIENT)} disabled={submitting}>
             <Text style={[styles.roleText, role === Role.CLIENT && styles.roleTextActive]}>Cliente</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.roleButton, role === Role.MECHANIC && styles.roleActive]} onPress={() => setRole(Role.MECHANIC)}>
+          <TouchableOpacity style={[styles.roleButton, role === Role.MECHANIC && styles.roleActive]} onPress={() => setRole(Role.MECHANIC)} disabled={submitting}>
             <Text style={[styles.roleText, role === Role.MECHANIC && styles.roleTextActive]}>Oficina</Text>
           </TouchableOpacity>
         </View>
 
         {!isLogin && (
           <View style={styles.row}>
-            <TextInput style={[styles.input, { flex: 1, marginRight: 8 }]} placeholder="Nome" placeholderTextColor="#71717a" value={firstName} onChangeText={setFirstName} />
-            <TextInput style={[styles.input, { flex: 1 }]} placeholder="Sobrenome" placeholderTextColor="#71717a" value={lastName} onChangeText={setLastName} />
+            <TextInput style={[styles.input, { flex: 1, marginRight: 8 }, submitting && { opacity: 0.5 }]} placeholder="Nome" placeholderTextColor="#71717a" value={firstName} onChangeText={setFirstName} editable={!submitting} />
+            <TextInput style={[styles.input, { flex: 1 }, submitting && { opacity: 0.5 }]} placeholder="Sobrenome" placeholderTextColor="#71717a" value={lastName} onChangeText={setLastName} editable={!submitting} />
           </View>
         )}
 
-        <TextInput style={styles.input} placeholder="E-mail" placeholderTextColor="#71717a" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
-        <TextInput style={styles.input} placeholder="Senha" placeholderTextColor="#71717a" value={password} onChangeText={setPassword} secureTextEntry />
+        <TextInput style={[styles.input, submitting && { opacity: 0.5 }]} placeholder="E-mail" placeholderTextColor="#71717a" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" editable={!submitting} />
+        <TextInput style={[styles.input, submitting && { opacity: 0.5 }]} placeholder="Senha" placeholderTextColor="#71717a" value={password} onChangeText={setPassword} secureTextEntry editable={!submitting} />
 
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={submitting}>
+        <TouchableOpacity style={[styles.submitButton, submitting && { opacity: 0.5 }, { flexDirection: 'row', justifyContent: 'center', gap: 8 }]} onPress={handleSubmit} disabled={submitting}>
+          {submitting && <ActivityIndicator size="small" color="#fff" />}
           <Text style={styles.submitText}>{submitting ? 'Aguarde...' : (isLogin ? 'Entrar' : 'Cadastrar')}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.switchButton} onPress={() => setIsLogin(!isLogin)}>
-          <Text style={styles.switchText}>{isLogin ? 'Não possui conta? Cadastre-se' : 'Já possui conta? Faça Login'}</Text>
+        <TouchableOpacity style={styles.switchButton} onPress={() => setIsLogin(!isLogin)} disabled={submitting}>
+          <Text style={[styles.switchText, submitting && { opacity: 0.5 }]}>{isLogin ? 'Não possui conta? Cadastre-se' : 'Já possui conta? Faça Login'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>

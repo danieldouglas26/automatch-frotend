@@ -13,24 +13,7 @@ export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void
         if (stored) {
           setBookings(JSON.parse(stored));
         } else {
-          const defaultBookings = [
-            {
-              id: '1',
-              professionalName: 'Carlos Silva (Mecânico)',
-              specialty: 'Mecânica Geral',
-              serviceName: 'Troca de Óleo e Filtro',
-              appointmentTime: '18/06/2026 às 14:00',
-              status: 'APROVADO'
-            },
-            {
-              id: '2',
-              professionalName: 'Oficina Roda Livre',
-              specialty: 'Freios & Suspensão',
-              serviceName: 'Revisão do Sistema de Freio',
-              appointmentTime: '20/06/2026 às 09:30',
-              status: 'PENDENTE'
-            }
-          ];
+          const defaultBookings: any[] = [];
           await SecureStore.setItemAsync('automatch_bookings', JSON.stringify(defaultBookings));
           setBookings(defaultBookings);
         }
