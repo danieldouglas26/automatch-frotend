@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web-app:
     image: ghcr.io/${GITHUB_REPOSITORY}/web-app:${IMAGE_TAG:-latest}
