@@ -4,7 +4,12 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function Sidebar() {
+interface SidebarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const { user } = useAuth();
 
   return (
@@ -15,34 +20,52 @@ export default function Sidebar() {
         </div>
 
         <nav className="space-y-1">
-          <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl bg-indigo-600/10 text-indigo-400 border border-indigo-500/10 transition-all">
+          <button 
+            onClick={() => setActiveTab('overview')} 
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-left ${activeTab === 'overview' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+          >
             Visão Geral
-          </a>
+          </button>
 
           {/* Renderização Condicional baseada na Role do Usuário */}
           {user?.role === 'CLIENT' ? (
             <>
-              <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all">
+              <button 
+                onClick={() => setActiveTab('search')} 
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-left ${activeTab === 'search' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+              >
                 Buscar Profissionais
-              </a>
-              <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all">
+              </button>
+              <button 
+                onClick={() => setActiveTab('bookings')} 
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-left ${activeTab === 'bookings' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+              >
                 Meus Agendamentos
-              </a>
+              </button>
             </>
           ) : (
             <>
-              <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all">
+              <button 
+                onClick={() => setActiveTab('catalog')} 
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-left ${activeTab === 'catalog' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+              >
                 Meu Catálogo
-              </a>
-              <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all">
+              </button>
+              <button 
+                onClick={() => setActiveTab('requests')} 
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-left ${activeTab === 'requests' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+              >
                 Serviços Solicitados
-              </a>
+              </button>
             </>
           )}
 
-          <a href="#" className="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-zinc-400 hover:bg-zinc-900 hover:text-white transition-all">
+          <button 
+            onClick={() => setActiveTab('settings')} 
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all text-left ${activeTab === 'settings' ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/10' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'}`}
+          >
             Configurações
-          </a>
+          </button>
         </nav>
       </div>
 

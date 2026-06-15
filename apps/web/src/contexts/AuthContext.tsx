@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService, LoginRequest, RegisterRequest, Role } from '@automatch/api-client';
+import { AuthService, LoginRequest, RegisterRequest, Role, setAuthToken } from '@automatch/api-client';
 
 interface User {
   id: string;
@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (savedToken && savedUser) {
       setToken(savedToken);
+      setAuthToken(savedToken);
       setUser(JSON.parse(savedUser));
     }
     setLoading(false);
@@ -45,7 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Mockamos os dados do usuário para refletir no frontend
     const mockUser: User = {
-      // Usamos o ID fixo do mock Python para o Mecânico para permitir o update depois
       id: selectedRole === Role.MECHANIC ? "4fa85f64-5717-4562-b3fc-2c963f66afa7" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       firstName: credentials.email.split('@')[0].toUpperCase(),
       lastName: selectedRole === Role.MECHANIC ? '(Oficina)' : '(Cliente)',
@@ -57,21 +57,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('@AutoMatch:user', JSON.stringify(mockUser));
     
     setToken(response.token);
+    setAuthToken(response.token);
     setUser(mockUser);
     router.push('/');
   };
 
   const register = async (data: RegisterRequest) => {
-    // 1. Chama o endpoint de registro
+    // Apenas cadastra o usuário no backend, sem logar automaticamente
     await AuthService.register(data);
-    // 2. Faz o login automático após o cadastro
-    await login({ email: data.email, password: data.password }, data.role);
   };
 
   const logout = () => {
     localStorage.removeItem('@AutoMatch:token');
     localStorage.removeItem('@AutoMatch:user');
     setToken(null);
+    setAuthToken(null);
     setUser(null);
     router.push('/login');
   };

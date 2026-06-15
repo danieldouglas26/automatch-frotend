@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { AuthService, LoginRequest, RegisterRequest, Role } from '@automatch/api-client';
+import { AuthService, LoginRequest, RegisterRequest, Role, setAuthToken } from '@automatch/api-client';
 
 interface User {
   id: string;
@@ -27,10 +27,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function loadSession() {
       try {
-        // Chaves corrigidas sem '@' e ':'
         const savedToken = await SecureStore.getItemAsync('automatch_token');
         const savedUser = await SecureStore.getItemAsync('automatch_user');
-        if (savedToken && savedUser) setUser(JSON.parse(savedUser));
+        if (savedToken && savedUser) {
+          setAuthToken(savedToken);
+          setUser(JSON.parse(savedUser));
+        }
       } catch (error) {
         console.error("Erro ao carregar sessão", error);
       } finally {
@@ -50,21 +52,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: selectedRole
     };
 
-    // Chaves corrigidas sem '@' e ':'
     await SecureStore.setItemAsync('automatch_token', response.token);
     await SecureStore.setItemAsync('automatch_user', JSON.stringify(mockUser));
+    setAuthToken(response.token);
     setUser(mockUser);
   };
 
   const register = async (data: RegisterRequest) => {
     await AuthService.register(data);
-    await login({ email: data.email, password: data.password }, data.role);
   };
 
   const logout = async () => {
-    // Chaves corrigidas sem '@' e ':'
     await SecureStore.deleteItemAsync('automatch_token');
     await SecureStore.deleteItemAsync('automatch_user');
+    setAuthToken(null);
     setUser(null);
   };
 

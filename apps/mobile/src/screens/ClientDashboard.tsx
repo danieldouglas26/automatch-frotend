@@ -1,11 +1,10 @@
-// apps/mobile/src/screens/ClientDashboard.tsx
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfessionalService, BookingService } from '@automatch/api-client';
+import * as SecureStore from 'expo-secure-store';
 
 export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => void }) {
-  // CORREÇÃO: Adicionamos o 'logout' aqui
   const { user, logout } = useAuth(); 
   const [specialty, setSpecialty] = useState('');
   const [professionals, setProfessionals] = useState<any[]>([]);
@@ -23,7 +22,7 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
 
   const handleBooking = async (prof: any) => {
     try {
-      await BookingService.create({
+      const response = await BookingService.create({
         clientId: user!.id,
         clientEmail: user!.email,
         professionalId: prof.id,
@@ -31,6 +30,36 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
         serviceName: "Agendamento via App",
         appointmentTime: new Date().toISOString()
       });
+
+      // Salva localmente em SecureStore para atualizar dinamicamente Meus Agendamentos
+      const newBooking = {
+        id: response.id || Math.random().toString(),
+        professionalName: `${prof.firstName} ${prof.lastName}`,
+        specialty: prof.specialty,
+        serviceName: "Agendamento via App",
+        appointmentTime: new Date().toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        status: response.status || "PENDENTE"
+      };
+
+      const stored = await SecureStore.getItemAsync('automatch_bookings');
+      const existingBookings = stored ? JSON.parse(stored) : [];
+      existingBookings.unshift(newBooking);
+      await SecureStore.setItemAsync('automatch_bookings', JSON.stringify(existingBookings));
+
+      // Também espelha nos pedidos recebidos do mecânico (para testes locais rápidos)
+      const newRequest = {
+        id: newBooking.id,
+        clientName: `${user?.firstName} ${user?.lastName}`,
+        clientEmail: user?.email,
+        serviceName: "Agendamento via App",
+        appointmentTime: newBooking.appointmentTime,
+        status: "PENDENTE"
+      };
+      const storedRequests = await SecureStore.getItemAsync('automatch_requests');
+      const existingRequests = storedRequests ? JSON.parse(storedRequests) : [];
+      existingRequests.unshift(newRequest);
+      await SecureStore.setItemAsync('automatch_requests', JSON.stringify(existingRequests));
+
       Alert.alert('Sucesso', `✅ Agendamento com ${prof.firstName} solicitado!`);
     } catch (err: any) {
       const traceId = err.response?.data?.requestId;

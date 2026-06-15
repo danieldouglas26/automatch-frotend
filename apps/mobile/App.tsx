@@ -6,32 +6,38 @@ import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
 import ClientDashboard from './src/screens/ClientDashboard';
 import Sidebar from './src/components/Sidebar';
-import MechanicDashboard from './src/screens/MechanicDashboard'; // <-- IMPORTANTE IMPORTAR
+import MechanicDashboard from './src/screens/MechanicDashboard';
+import OverviewScreen from './src/screens/OverviewScreen';
+import BookingsScreen from './src/screens/BookingsScreen';
+import RequestsScreen from './src/screens/RequestsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
 // O Layout principal que abriga o conteúdo e a Sidebar
 function MainLayout() {
   const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
-  // Um roteador muito simples baseado em estado!
-  const [currentRoute, setCurrentRoute] = useState(
-    user?.role === 'CLIENT' ? 'Search' : 'Catalog'
-  );
+  // Iniciamos na tela de Visão Geral (Dashboard)
+  const [currentRoute, setCurrentRoute] = useState('Dashboard');
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
- const renderScreen = () => {
-    if (user?.role === 'CLIENT') {
-      switch (currentRoute) {
-        case 'Search': return <ClientDashboard onOpenMenu={toggleSidebar} />;
-        default: return <ClientDashboard onOpenMenu={toggleSidebar} />;
-      }
-    } else {
-       // A visão do mecânico é renderizada aqui:
-      switch (currentRoute) {
-        case 'Catalog': return <MechanicDashboard onOpenMenu={toggleSidebar} />; 
-        default: return <MechanicDashboard onOpenMenu={toggleSidebar} />;
-      }
+  const renderScreen = () => {
+    switch (currentRoute) {
+      case 'Dashboard':
+        return <OverviewScreen onOpenMenu={toggleSidebar} />;
+      case 'Search':
+        return <ClientDashboard onOpenMenu={toggleSidebar} />;
+      case 'Bookings':
+        return <BookingsScreen onOpenMenu={toggleSidebar} />;
+      case 'Catalog':
+        return <MechanicDashboard onOpenMenu={toggleSidebar} />;
+      case 'Requests':
+        return <RequestsScreen onOpenMenu={toggleSidebar} />;
+      case 'Settings':
+        return <SettingsScreen onOpenMenu={toggleSidebar} />;
+      default:
+        return <OverviewScreen onOpenMenu={toggleSidebar} />;
     }
   };
 

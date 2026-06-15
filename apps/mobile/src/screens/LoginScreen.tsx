@@ -22,6 +22,9 @@ const handleSubmit = async () => {
       } else {
         const payload: RegisterRequest = { email, password, firstName, lastName, role };
         await register(payload);
+        Alert.alert('Sucesso', 'Conta criada com sucesso! Digite sua senha para entrar.');
+        setIsLogin(true);
+        setPassword('');
       }
     } catch (err: any) {
       const traceId = err.response?.data?.requestId;

@@ -17,11 +17,19 @@ export default function LoginPage() {
   const [lastName, setLastName] = useState('');
   
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const handleSwitchMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setSuccess('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setSubmitting(true);
 
     try {
@@ -30,6 +38,9 @@ export default function LoginPage() {
       } else {
         const payload: RegisterRequest = { email, password, firstName, lastName, role };
         await register(payload);
+        setSuccess('Conta criada com sucesso! Digite sua senha para entrar.');
+        setIsLogin(true);
+        setPassword('');
       }
     } catch (err: any) {
       const traceId = err.response?.data?.requestId;
@@ -67,6 +78,7 @@ export default function LoginPage() {
           </div>
 
           {error && <div className="p-3 text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg">{error}</div>}
+          {success && <div className="p-3 text-sm text-green-400 bg-green-950/50 border border-green-900 rounded-lg">{success}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
@@ -99,7 +111,7 @@ export default function LoginPage() {
 
           <div className="text-center text-sm text-zinc-400 pt-4">
             {isLogin ? "Não possui uma conta? " : "Já possui uma conta? "}
-            <button onClick={() => setIsLogin(!isLogin)} className="font-medium text-indigo-400 hover:underline">
+            <button onClick={handleSwitchMode} className="font-medium text-indigo-400 hover:underline">
               {isLogin ? "Cadastre-se" : "Faça Login"}
             </button>
           </div>

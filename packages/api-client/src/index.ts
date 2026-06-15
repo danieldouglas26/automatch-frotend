@@ -22,12 +22,23 @@ export const api = axios.create({
   },
 });
 
+let authToken: string | null = null;
+
+export const setAuthToken = (token: string | null) => {
+  authToken = token;
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+  }
+};
+
 // Interceptador para enviar o token JWT
 api.interceptors.request.use(
   async (config) => {
-    // Lógica para pegar o token (ex: localStorage na Web ou AsyncStorage no Mobile)
-    // const token = await getToken(); 
-    // if (token) { config.headers.Authorization = `Bearer ${token}`; }
+    if (authToken) {
+      config.headers.Authorization = `Bearer ${authToken}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
