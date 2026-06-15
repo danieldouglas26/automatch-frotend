@@ -2,21 +2,21 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthService, LoginRequest, RegisterUserRequest } from '@automatch/api-client';
+import { AuthService, LoginRequest, RegisterRequest, Role } from '@automatch/api-client';
 
 interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: 'CLIENT' | 'MECHANIC';
+  role: Role;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (credentials: LoginRequest, role: 'CLIENT' | 'MECHANIC') => Promise<void>;
-  register: (data: RegisterUserRequest) => Promise<void>;
+  login: (credentials: LoginRequest, role: Role) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -40,15 +40,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = async (credentials: LoginRequest, selectedRole: 'CLIENT' | 'MECHANIC') => {
+  const login = async (credentials: LoginRequest, selectedRole: Role) => {
     const response = await AuthService.login(credentials);
     
     // Mockamos os dados do usuário para refletir no frontend
     const mockUser: User = {
       // Usamos o ID fixo do mock Python para o Mecânico para permitir o update depois
-      id: selectedRole === 'MECHANIC' ? "4fa85f64-5717-4562-b3fc-2c963f66afa7" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      id: selectedRole === Role.MECHANIC ? "4fa85f64-5717-4562-b3fc-2c963f66afa7" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       firstName: credentials.email.split('@')[0].toUpperCase(),
-      lastName: selectedRole === 'MECHANIC' ? '(Oficina)' : '(Cliente)',
+      lastName: selectedRole === Role.MECHANIC ? '(Oficina)' : '(Cliente)',
       email: credentials.email,
       role: selectedRole
     };
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/');
   };
 
-  const register = async (data: RegisterUserRequest) => {
+  const register = async (data: RegisterRequest) => {
     // 1. Chama o endpoint de registro
     await AuthService.register(data);
     // 2. Faz o login automático após o cadastro

@@ -1,19 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import { AuthService, LoginRequest, RegisterUserRequest } from '@automatch/api-client';
+import { AuthService, LoginRequest, RegisterRequest, Role } from '@automatch/api-client';
 
 interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: 'CLIENT' | 'MECHANIC';
+  role: Role;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (credentials: LoginRequest, role: 'CLIENT' | 'MECHANIC') => Promise<void>;
-  register: (data: RegisterUserRequest) => Promise<void>;
+  login: (credentials: LoginRequest, role: Role) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
 }
@@ -40,12 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadSession();
   }, []);
 
-  const login = async (credentials: LoginRequest, selectedRole: 'CLIENT' | 'MECHANIC') => {
+  const login = async (credentials: LoginRequest, selectedRole: Role) => {
     const response = await AuthService.login(credentials);
     const mockUser: User = {
-      id: selectedRole === 'MECHANIC' ? "4fa85f64-5717-4562-b3fc-2c963f66afa7" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      id: selectedRole === Role.MECHANIC ? "4fa85f64-5717-4562-b3fc-2c963f66afa7" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       firstName: credentials.email.split('@')[0].toUpperCase(),
-      lastName: selectedRole === 'MECHANIC' ? '(Oficina)' : '(Cliente)',
+      lastName: selectedRole === Role.MECHANIC ? '(Oficina)' : '(Cliente)',
       email: credentials.email,
       role: selectedRole
     };
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(mockUser);
   };
 
-  const register = async (data: RegisterUserRequest) => {
+  const register = async (data: RegisterRequest) => {
     await AuthService.register(data);
     await login({ email: data.email, password: data.password }, data.role);
   };

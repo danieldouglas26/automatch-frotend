@@ -14,8 +14,10 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
     try {
       const results = await ProfessionalService.search(specialty);
       setProfessionals(results);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível buscar profissionais');
+    } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      const msg = traceId ? `(Trace ID: ${traceId})` : '';
+      Alert.alert('Erro', `Não foi possível buscar profissionais ${msg}`);
     }
   };
 
@@ -30,8 +32,10 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
         appointmentTime: new Date().toISOString()
       });
       Alert.alert('Sucesso', `✅ Agendamento com ${prof.firstName} solicitado!`);
-    } catch (error) {
-      Alert.alert('Erro', 'Falha ao agendar serviço.');
+    } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      const msg = traceId ? `(Trace ID: ${traceId})` : '';
+      Alert.alert('Erro', `Falha ao agendar serviço. ${msg}`);
     }
   };
 

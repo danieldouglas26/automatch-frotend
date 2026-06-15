@@ -51,8 +51,9 @@ function ClientDashboard({ user }: { user: any }) {
     try {
       const results = await ProfessionalService.search(specialty);
       setProfessionals(results);
-    } catch (error) {
-      alert("Erro ao buscar profissionais");
+    } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      alert(`Erro ao buscar profissionais. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
     } finally {
       setIsSearching(false);
     }
@@ -69,8 +70,9 @@ function ClientDashboard({ user }: { user: any }) {
         appointmentTime: new Date().toISOString()
       });
       alert(`✅ Agendamento com ${prof.firstName} solicitado com sucesso!`);
-    } catch (error) {
-      alert("Erro ao tentar agendar.");
+    } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      alert(`Erro ao tentar agendar. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
     }
   };
 
@@ -145,8 +147,9 @@ function MechanicDashboard({ user }: { user: any }) {
       // Usamos o user.id (que para Mecânico estamos fixando igual ao do mock Python no Login)
       await ProfessionalService.update(user.id, payload);
       alert("✅ Perfil atualizado no catálogo com sucesso!");
-    } catch (error) {
-      alert("Erro ao atualizar perfil.");
+    } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      alert(`Erro ao atualizar perfil. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
     } finally {
       setIsUpdating(false);
     }

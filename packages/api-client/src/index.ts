@@ -1,4 +1,14 @@
 import axios from 'axios';
+import { 
+  RegisterRequest, 
+  LoginRequest, 
+  AuthResponse, 
+  Professional, 
+  UpdateProfessionalRequest, 
+  BookingRequest, 
+  BookingResponse 
+} from '@automatch/core';
+export * from '@automatch/core';
 
 // ==========================================
 // 1. CONFIGURAÇÃO BASE (api.ts)
@@ -24,52 +34,18 @@ api.interceptors.request.use(
 );
 
 // ==========================================
-// 2. INTERFACES (Espelhando os DTOs do Java)
-// ==========================================
-
-export interface RegisterUserRequest {
-  email: string;
-  password?: string;
-  firstName: string;
-  lastName: string;
-  role: 'CLIENT' | 'MECHANIC';
-}
-
-export interface LoginRequest {
-  email: string;
-  password?: string;
-}
-
-export interface UpdateProfessionalRequest {
-  firstName: string;
-  lastName: string;
-  specialty: string;
-  services: string[];
-  active: boolean;
-}
-
-export interface CreateBookingRequest {
-  clientId: string;
-  clientEmail: string;
-  professionalId: string;
-  professionalEmail: string;
-  serviceName: string;
-  appointmentTime: string; // ISO 8601 ex: 2026-07-15T14:30:00
-}
-
-// ==========================================
 // 3. SERVIÇOS 
 // ==========================================
 
 export const AuthService = {
   // Equivalente a AuthController.register
-  register: async (data: RegisterUserRequest) => {
+  register: async (data: RegisterRequest): Promise<void> => {
     const response = await api.post('/auth/register', data);
     return response.data;
   },
   
   // Equivalente a AuthController.login
-  login: async (data: LoginRequest) => {
+  login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', data);
     return response.data;
   }
@@ -77,7 +53,7 @@ export const AuthService = {
 
 export const ProfessionalService = {
   // Equivalente a ProfessionalController.search
-  search: async (specialty?: string) => {
+  search: async (specialty?: string): Promise<Professional[]> => {
     const response = await api.get('/professionals/search', {
       params: specialty ? { specialty } : {}
     });
@@ -85,7 +61,7 @@ export const ProfessionalService = {
   },
   
   // Equivalente a ProfessionalController.update
-  update: async (id: string, data: UpdateProfessionalRequest) => {
+  update: async (id: string, data: UpdateProfessionalRequest): Promise<Professional> => {
     const response = await api.put(`/professionals/${id}`, data);
     return response.data;
   }
@@ -93,7 +69,7 @@ export const ProfessionalService = {
 
 export const BookingService = {
   // Equivalente a BookingController.create
-  create: async (data: CreateBookingRequest) => {
+  create: async (data: BookingRequest): Promise<BookingResponse> => {
     const response = await api.post('/bookings', data);
     return response.data;
   }

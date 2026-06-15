@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { RegisterUserRequest } from '@automatch/api-client';
+import { RegisterRequest, Role } from '@automatch/api-client';
 
 export default function LoginPage() {
   const { login, register } = useAuth();
   
   const [isLogin, setIsLogin] = useState(true); // Alterna entre Login e Register
-  const [role, setRole] = useState<'CLIENT' | 'MECHANIC'>('CLIENT');
+  const [role, setRole] = useState<Role>(Role.CLIENT);
   
   // Campos do formulário
   const [email, setEmail] = useState('');
@@ -28,11 +28,13 @@ export default function LoginPage() {
       if (isLogin) {
         await login({ email, password }, role);
       } else {
-        const payload: RegisterUserRequest = { email, password, firstName, lastName, role };
+        const payload: RegisterRequest = { email, password, firstName, lastName, role };
         await register(payload);
       }
-    } catch (err) {
-      setError(isLogin ? 'Credenciais inválidas.' : 'Erro ao criar conta. Tente novamente.');
+    } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      const baseError = isLogin ? 'Credenciais inválidas.' : 'Erro ao criar conta. Tente novamente.';
+      setError(traceId ? `${baseError} (Trace ID: ${traceId})` : baseError);
     } finally {
       setSubmitting(false);
     }
@@ -60,8 +62,8 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 p-1 bg-zinc-900 rounded-xl border border-zinc-800">
-            <button type="button" onClick={() => setRole('CLIENT')} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === 'CLIENT' ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}>Usuário Comum</button>
-            <button type="button" onClick={() => setRole('MECHANIC')} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === 'MECHANIC' ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}>Mecânico / Oficina</button>
+            <button type="button" onClick={() => setRole(Role.CLIENT)} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === Role.CLIENT ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}>Usuário Comum</button>
+            <button type="button" onClick={() => setRole(Role.MECHANIC)} className={`py-2.5 text-sm font-medium rounded-lg transition-all ${role === Role.MECHANIC ? 'bg-indigo-600 text-white shadow' : 'text-zinc-400 hover:text-white'}`}>Mecânico / Oficina</button>
           </div>
 
           {error && <div className="p-3 text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg">{error}</div>}

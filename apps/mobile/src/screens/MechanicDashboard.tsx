@@ -25,8 +25,10 @@ export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => v
       // Atualiza usando o ID da sessão
       await ProfessionalService.update(user!.id, payload);
       Alert.alert('Sucesso', '✅ Seu perfil foi atualizado no catálogo!');
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível atualizar o perfil.');
+    } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      const msg = traceId ? `(Trace ID: ${traceId})` : '';
+      Alert.alert('Erro', `Não foi possível atualizar o perfil. ${msg}`);
     } finally {
       setIsUpdating(false);
     }

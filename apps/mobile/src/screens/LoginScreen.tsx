@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { RegisterUserRequest } from '@automatch/api-client';
+import { RegisterRequest, Role } from '@automatch/api-client';
 
 export default function LoginScreen() {
   const { login, register } = useAuth();
   
   const [isLogin, setIsLogin] = useState(true);
-  const [role, setRole] = useState<'CLIENT' | 'MECHANIC'>('CLIENT');
+  const [role, setRole] = useState<Role>(Role.CLIENT);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -20,10 +20,14 @@ const handleSubmit = async () => {
       if (isLogin) {
         await login({ email, password }, role);
       } else {
-        const payload: RegisterUserRequest = { email, password, firstName, lastName, role };
+        const payload: RegisterRequest = { email, password, firstName, lastName, role };
         await register(payload);
       }
     } catch (err: any) {
+      const traceId = err.response?.data?.requestId;
+      const baseMessage = isLogin ? 'Credenciais inválidas.' : 'Erro ao criar conta.';
+      const errorMessage = traceId ? `${baseMessage}\nTrace ID: ${traceId}` : baseMessage;
+      
       // ==== LOGS PARA DEBUG NO TERMINAL DO EXPO ====
       console.log('\n❌ --- ERRO DE AUTENTICAÇÃO ---');
       console.log('Mensagem de erro:', err.message);
@@ -43,7 +47,7 @@ const handleSubmit = async () => {
       console.log('-------------------------------\n');
       // =============================================
 
-      Alert.alert('Erro', isLogin ? 'Credenciais inválidas.' : 'Erro ao criar conta.');
+      Alert.alert('Erro', errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -58,11 +62,11 @@ const handleSubmit = async () => {
         </View>
 
         <View style={styles.roleContainer}>
-          <TouchableOpacity style={[styles.roleButton, role === 'CLIENT' && styles.roleActive]} onPress={() => setRole('CLIENT')}>
-            <Text style={[styles.roleText, role === 'CLIENT' && styles.roleTextActive]}>Cliente</Text>
+          <TouchableOpacity style={[styles.roleButton, role === Role.CLIENT && styles.roleActive]} onPress={() => setRole(Role.CLIENT)}>
+            <Text style={[styles.roleText, role === Role.CLIENT && styles.roleTextActive]}>Cliente</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.roleButton, role === 'MECHANIC' && styles.roleActive]} onPress={() => setRole('MECHANIC')}>
-            <Text style={[styles.roleText, role === 'MECHANIC' && styles.roleTextActive]}>Oficina</Text>
+          <TouchableOpacity style={[styles.roleButton, role === Role.MECHANIC && styles.roleActive]} onPress={() => setRole(Role.MECHANIC)}>
+            <Text style={[styles.roleText, role === Role.MECHANIC && styles.roleTextActive]}>Oficina</Text>
           </TouchableOpacity>
         </View>
 

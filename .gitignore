@@ -22,3 +22,5 @@ web-build/
 .pnpm-store/
 
 mock_endpoints/.venv/
+
+automatch-backend/
