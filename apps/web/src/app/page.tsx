@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ProfessionalService, BookingService, UpdateProfessionalRequest } from '@automatch/api-client';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
+import { toast } from 'react-hot-toast';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -148,7 +149,7 @@ function ClientDashboard({ user }: { user: any }) {
       setProfessionals(results);
     } catch (err: any) {
       const traceId = err.response?.data?.requestId;
-      alert(`Erro ao buscar profissionais. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
+      toast.error(`Erro ao buscar profissionais. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
     } finally {
       setIsSearching(false);
     }
@@ -192,10 +193,10 @@ function ClientDashboard({ user }: { user: any }) {
       existingRequests.unshift(newRequest);
       localStorage.setItem('@AutoMatch:requests', JSON.stringify(existingRequests));
 
-      alert(`✅ Agendamento com ${prof.firstName} solicitado com sucesso!`);
+      toast.success(`Agendamento com ${prof.firstName} solicitado!`);
     } catch (err: any) {
       const traceId = err.response?.data?.requestId;
-      alert(`Erro ao tentar agendar. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
+      toast.error(`Erro ao tentar agendar. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
     }
   };
 
@@ -338,10 +339,10 @@ function MechanicDashboard({ user }: { user: any }) {
         active: true
       };
       await ProfessionalService.update(user.id, payload);
-      alert("✅ Perfil atualizado no catálogo com sucesso!");
+      toast.success("Perfil atualizado no catálogo!");
     } catch (err: any) {
       const traceId = err.response?.data?.requestId;
-      alert(`Erro ao atualizar perfil. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
+      toast.error(`Erro ao atualizar perfil. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
     } finally {
       setIsUpdating(false);
     }

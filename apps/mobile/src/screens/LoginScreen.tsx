@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { RegisterRequest, Role } from '@automatch/api-client';
+import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
   const { login, register } = useAuth();
@@ -14,15 +15,24 @@ export default function LoginScreen() {
   const [lastName, setLastName] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-const handleSubmit = async () => {
+  const handleSubmit = async () => {
     setSubmitting(true);
     try {
       if (isLogin) {
         await login({ email, password }, role);
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Login realizado com sucesso!'
+        });
       } else {
         const payload: RegisterRequest = { email, password, firstName, lastName, role };
         await register(payload);
-        Alert.alert('Sucesso', 'Conta criada com sucesso! Digite sua senha para entrar.');
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Conta criada! Digite sua senha para entrar.'
+        });
         setIsLogin(true);
         setPassword('');
       }
@@ -50,7 +60,11 @@ const handleSubmit = async () => {
       console.log('-------------------------------\n');
       // =============================================
 
-      Alert.alert('Erro', errorMessage);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: errorMessage
+      });
     } finally {
       setSubmitting(false);
     }
@@ -60,6 +74,10 @@ const handleSubmit = async () => {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
+          <Image 
+            source={require('../../assets/logo.png')} 
+            style={{ width: 80, height: 80, resizeMode: 'contain', marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: '#27272a' }} 
+          />
           <Text style={styles.logo}>AUTO<Text style={styles.logoWhite}>MATCH</Text></Text>
           <Text style={styles.subtitle}>{isLogin ? 'Acesse sua conta' : 'Crie sua conta'}</Text>
         </View>

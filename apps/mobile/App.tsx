@@ -73,11 +73,14 @@ function AuthRouter() {
   return <MainLayout />;
 }
 
+import Toast from 'react-native-toast-message';
+
 export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
       <AuthRouter />
+      <Toast />
     </AuthProvider>
   );
 }
