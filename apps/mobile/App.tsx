@@ -11,7 +11,7 @@ import OverviewScreen from './src/screens/OverviewScreen';
 import BookingsScreen from './src/screens/BookingsScreen';
 import RequestsScreen from './src/screens/RequestsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import Toast from 'react-native-toast-message';
+import Toast, { BaseToast, ErrorToast } from 'react-native-toast-message';
 
 // O Layout principal que abriga o conteúdo e a Sidebar
 function MainLayout() {
@@ -74,12 +74,69 @@ function AuthRouter() {
   return <MainLayout />;
 }
 
+const toastConfig = {
+  success: (props: any) => (
+    <BaseToast
+      {...props}
+      style={{ 
+        borderLeftColor: '#4f46e5', 
+        backgroundColor: '#18181b', 
+        borderLeftWidth: 6, 
+        height: 'auto', 
+        paddingVertical: 12, 
+        borderRadius: 12, 
+        borderColor: '#27272a', 
+        borderWidth: 1,
+        width: '90%'
+      }}
+      contentContainerStyle={{ paddingHorizontal: 15 }}
+      text1Style={{
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#fff'
+      }}
+      text2Style={{
+        fontSize: 12,
+        color: '#a1a1aa',
+        marginTop: 2
+      }}
+    />
+  ),
+  error: (props: any) => (
+    <ErrorToast
+      {...props}
+      style={{ 
+        borderLeftColor: '#ef4444', 
+        backgroundColor: '#18181b', 
+        borderLeftWidth: 6, 
+        height: 'auto', 
+        paddingVertical: 12, 
+        borderRadius: 12, 
+        borderColor: '#27272a', 
+        borderWidth: 1,
+        width: '90%'
+      }}
+      contentContainerStyle={{ paddingHorizontal: 15 }}
+      text1Style={{
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#fff'
+      }}
+      text2Style={{
+        fontSize: 12,
+        color: '#a1a1aa',
+        marginTop: 2
+      }}
+    />
+  )
+};
+
 export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
       <AuthRouter />
-      <Toast topOffset={Platform.OS === 'ios' ? 60 : 50} />
+      <Toast position="bottom" bottomOffset={40} config={toastConfig} />
     </AuthProvider>
   );
 }

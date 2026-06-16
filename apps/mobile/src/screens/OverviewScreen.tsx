@@ -56,14 +56,14 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
           {onOpenMenu && (
             <TouchableOpacity onPress={onOpenMenu} style={styles.menuBtn} activeOpacity={0.7}>
               <Text style={styles.menuIcon}>☰</Text>
             </TouchableOpacity>
           )}
-          <View>
-            <Text style={styles.greeting}>Olá, {user?.firstName}!</Text>
+          <View style={{ flexShrink: 1 }}>
+            <Text style={styles.greeting} numberOfLines={1} adjustsFontSizeToFit>Olá, {user?.firstName}!</Text>
             <Text style={styles.role}>{user?.role === 'MECHANIC' ? 'Mecânico / Oficina' : 'Cliente AutoMatch'}</Text>
           </View>
         </View>
@@ -71,7 +71,7 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.banner}>
-          <Text style={styles.bannerTitle}>Bem-vindo ao AutoMatch!</Text>
+          <Text style={styles.bannerTitle} numberOfLines={1} adjustsFontSizeToFit>Bem-vindo ao AutoMatch!</Text>
           <Text style={styles.bannerDesc}>
             {user?.role === 'CLIENT'
               ? 'Encontre os melhores profissionais para o seu veículo com rapidez e segurança.'
@@ -102,8 +102,7 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
           <Text style={styles.cardTitle}>Instruções do Projeto</Text>
           <Text style={styles.cardText}>
             • Use o menu lateral (☰) no canto superior esquerdo para navegar pelas abas.{'\n\n'}
-            • Qualquer agendamento criado no perfil de Cliente ficará disponível imediatamente em "Meus Agendamentos" e também aparecerá para os Mecânicos.{'\n\n'}
-            • Todos os endpoints essenciais (autenticação, cadastro, busca de catálogo e criação de agendamento) chamam a VPS com rastreamento de Trace ID.
+            • Qualquer agendamento criado no perfil de Cliente ficará disponível imediatamente em "Meus Agendamentos" e também aparecerá para os Mecânicos.
           </Text>
         </View>
       </ScrollView>
