@@ -6,7 +6,6 @@ import {
   TextInput, 
   TouchableOpacity, 
   StyleSheet, 
-  Alert, 
   ScrollView, 
   KeyboardAvoidingView, 
   Platform, 
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { ProfessionalService, UpdateProfessionalRequest } from '@automatch/api-client';
+import Toast from 'react-native-toast-message';
 
 export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => void }) {
   const { user, logout } = useAuth();
@@ -46,11 +46,21 @@ export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => v
         active: true
       };
       await ProfessionalService.update(user!.id, payload);
-      Alert.alert('Sucesso', '✅ Seu perfil foi atualizado no catálogo!');
-    } catch (err: any) {
-      const traceId = err.response?.data?.requestId;
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Catálogo Atualizado',
+        text2: 'Seu perfil foi atualizado com sucesso!'
+      });
+    } catch (err: unknown) {
+      const errResponse = err as { response?: { data?: { requestId?: string } } };
+      const traceId = errResponse.response?.data?.requestId;
       const msg = traceId ? `(Trace ID: ${traceId})` : '';
-      Alert.alert('Erro', `Não foi possível atualizar o perfil. ${msg}`);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao atualizar',
+        text2: `Não foi possível atualizar o perfil. ${msg}`
+      });
     } finally {
       setIsUpdating(false);
     }

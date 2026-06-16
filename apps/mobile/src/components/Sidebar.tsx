@@ -73,7 +73,7 @@ export default function Sidebar({ isOpen, onClose, onNavigate, currentRoute }: S
     await logout();
   };
 
-  const navItem = (title: string, route: string, icon: string) => {
+  const navItem = (title: string, route: string) => {
     const isActive = currentRoute === route;
     return (
       <TouchableOpacity 
@@ -81,7 +81,6 @@ export default function Sidebar({ isOpen, onClose, onNavigate, currentRoute }: S
         onPress={() => { onNavigate(route); onClose(); }}
         activeOpacity={0.7}
       >
-        <Text style={styles.navIcon}>{icon}</Text>
         <Text style={[styles.navText, isActive && styles.navTextActive]}>{title}</Text>
       </TouchableOpacity>
     );
@@ -115,21 +114,21 @@ export default function Sidebar({ isOpen, onClose, onNavigate, currentRoute }: S
         </View>
 
         <View style={styles.navContainer}>
-          {navItem('Visão Geral', 'Dashboard', '📊')}
+          {navItem('Visão Geral', 'Dashboard')}
           
           {user?.role === 'CLIENT' ? (
             <>
-              {navItem('Buscar Profissionais', 'Search', '🔍')}
-              {navItem('Meus Agendamentos', 'Bookings', '📅')}
+              {navItem('Buscar Profissionais', 'Search')}
+              {navItem('Meus Agendamentos', 'Bookings')}
             </>
           ) : (
             <>
-               {navItem('Meu Catálogo', 'Catalog', '⚙️')}
-               {navItem('Serviços Solicitados', 'Requests', '📋')}
+               {navItem('Meu Catálogo', 'Catalog')}
+               {navItem('Serviços Solicitados', 'Requests')}
             </>
           )}
 
-          {navItem('Configurações', 'Settings', '🛠️')}
+          {navItem('Configurações', 'Settings')}
         </View>
 
         <View style={styles.footer}>

@@ -1,7 +1,7 @@
 // apps/mobile/App.tsx
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import LoginScreen from './src/screens/LoginScreen';
 import ClientDashboard from './src/screens/ClientDashboard';
@@ -11,6 +11,7 @@ import OverviewScreen from './src/screens/OverviewScreen';
 import BookingsScreen from './src/screens/BookingsScreen';
 import RequestsScreen from './src/screens/RequestsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import Toast from 'react-native-toast-message';
 
 // O Layout principal que abriga o conteúdo e a Sidebar
 function MainLayout() {
@@ -20,7 +21,7 @@ function MainLayout() {
   // Iniciamos na tela de Visão Geral (Dashboard)
   const [currentRoute, setCurrentRoute] = useState('Dashboard');
 
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = () => setIsSidebarOpen(prev => !prev);
 
   const renderScreen = () => {
     switch (currentRoute) {
@@ -73,14 +74,12 @@ function AuthRouter() {
   return <MainLayout />;
 }
 
-import Toast from 'react-native-toast-message';
-
 export default function App() {
   return (
     <AuthProvider>
       <StatusBar style="light" />
       <AuthRouter />
-      <Toast />
+      <Toast topOffset={Platform.OS === 'ios' ? 60 : 50} />
     </AuthProvider>
   );
 }

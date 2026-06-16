@@ -7,18 +7,18 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   FlatList, 
-  Alert, 
   ActivityIndicator, 
   Animated 
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import { ProfessionalService, BookingService } from '@automatch/api-client';
+import { ProfessionalService, BookingService, Professional } from '@automatch/api-client';
 import * as SecureStore from 'expo-secure-store';
+import Toast from 'react-native-toast-message';
 
 export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => void }) {
   const { user, logout } = useAuth(); 
   const [specialty, setSpecialty] = useState('');
-  const [professionals, setProfessionals] = useState<any[]>([]);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [bookingIds, setBookingIds] = useState<Record<string, boolean>>({});
   const [isFocused, setIsFocused] = useState(false);
@@ -38,17 +38,23 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
     try {
       const results = await ProfessionalService.search(specialty);
       setProfessionals(results);
-    } catch (err: any) {
-      const traceId = err.response?.data?.requestId;
+    } catch (err: unknown) {
+      const errResponse = err as { response?: { data?: { requestId?: string } } };
+      const traceId = errResponse.response?.data?.requestId;
       const msg = traceId ? `(Trace ID: ${traceId})` : '';
-      Alert.alert('Erro', `Não foi possível buscar profissionais ${msg}`);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro na busca',
+        text2: `Não foi possível buscar profissionais. ${msg}`
+      });
     } finally {
       setIsSearching(false);
     }
   };
 
-  const handleBooking = async (prof: any) => {
-    setBookingIds(prev => ({ ...prev, [prof.id]: true }));
+  const handleBooking = async (prof: Professional) => {
+    if (!prof.id) return;
+    setBookingIds(prev => ({ ...prev, [prof.id!]: true }));
     try {
       const response = await BookingService.create({
         clientId: user!.id,
@@ -86,13 +92,22 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
       existingRequests.unshift(newRequest);
       await SecureStore.setItemAsync('automatch_requests', JSON.stringify(existingRequests));
 
-      Alert.alert('Sucesso', `✅ Agendamento com ${prof.firstName} solicitado!`);
-    } catch (err: any) {
-      const traceId = err.response?.data?.requestId;
+      Toast.show({
+        type: 'success',
+        text1: 'Agendamento Enviado',
+        text2: `Sua solicitação com ${prof.firstName} foi enviada.`
+      });
+    } catch (err: unknown) {
+      const errResponse = err as { response?: { data?: { requestId?: string } } };
+      const traceId = errResponse.response?.data?.requestId;
       const msg = traceId ? `(Trace ID: ${traceId})` : '';
-      Alert.alert('Erro', `Falha ao agendar serviço. ${msg}`);
+      Toast.show({
+        type: 'error',
+        text1: 'Falha no agendamento',
+        text2: `Ocorreu um erro ao tentar agendar. ${msg}`
+      });
     } finally {
-      setBookingIds(prev => ({ ...prev, [prof.id]: false }));
+      setBookingIds(prev => ({ ...prev, [prof.id!]: false }));
     }
   };
 
@@ -150,7 +165,7 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
       {/* PROFESSIONALS LIST */}
       <FlatList
         data={professionals}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id || ''}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
         renderItem={({ item }) => (
@@ -166,15 +181,15 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
             <TouchableOpacity 
               style={[
                 styles.bookBtn, 
-                bookingIds[item.id] && { opacity: 0.5 }, 
+                bookingIds[item.id!] && { opacity: 0.5 }, 
                 { flexDirection: 'row', justifyContent: 'center', gap: 8 }
               ]} 
               onPress={() => handleBooking(item)}
-              disabled={bookingIds[item.id]}
+              disabled={bookingIds[item.id!]}
               activeOpacity={0.8}
             >
-              {bookingIds[item.id] && <ActivityIndicator size="small" color="#fff" />}
-              <Text style={styles.bookTxt}>{bookingIds[item.id] ? 'Agendando...' : 'Agendar Serviço'}</Text>
+              {bookingIds[item.id!] && <ActivityIndicator size="small" color="#fff" />}
+              <Text style={styles.bookTxt}>{bookingIds[item.id!] ? 'Agendando...' : 'Agendar Serviço'}</Text>
             </TouchableOpacity>
           </View>
         )}
