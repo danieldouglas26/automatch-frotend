@@ -1,5 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+// apps/mobile/src/screens/OverviewScreen.tsx
+import React, { useEffect, useState, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  ScrollView, 
+  ActivityIndicator, 
+  Animated 
+} from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import * as SecureStore from 'expo-secure-store';
 
@@ -7,6 +16,16 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
   const { user } = useAuth();
   const [stats, setStats] = useState({ bookingsCount: 0, rating: '4.8 ★', status: 'Ativo' });
   const [loading, setLoading] = useState(true);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   useEffect(() => {
     async function loadStats() {
@@ -35,11 +54,11 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
   }, [user]);
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {onOpenMenu && (
-            <TouchableOpacity onPress={onOpenMenu} style={styles.menuBtn}>
+            <TouchableOpacity onPress={onOpenMenu} style={styles.menuBtn} activeOpacity={0.7}>
               <Text style={styles.menuIcon}>☰</Text>
             </TouchableOpacity>
           )}
@@ -50,7 +69,7 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.banner}>
           <Text style={styles.bannerTitle}>Bem-vindo ao AutoMatch!</Text>
           <Text style={styles.bannerDesc}>
@@ -82,32 +101,114 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Instruções do Projeto</Text>
           <Text style={styles.cardText}>
-            • Use o menu lateral (☰) no canto superior esquerdo para navegar pelas abas.{'\n'}
-            • Qualquer agendamento criado no perfil de Cliente ficará disponível imediatamente em "Meus Agendamentos" e também aparecerá para os Mecânicos.{'\n'}
+            • Use o menu lateral (☰) no canto superior esquerdo para navegar pelas abas.{'\n\n'}
+            • Qualquer agendamento criado no perfil de Cliente ficará disponível imediatamente em "Meus Agendamentos" e também aparecerá para os Mecânicos.{'\n\n'}
             • Todos os endpoints essenciais (autenticação, cadastro, busca de catálogo e criação de agendamento) chamam a VPS com rastreamento de Trace ID.
           </Text>
         </View>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#09090b', paddingTop: 60 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingHorizontal: 20 },
-  greeting: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
-  role: { color: '#a1a1aa', fontSize: 14 },
-  menuBtn: { padding: 8, backgroundColor: '#18181b', borderRadius: 8, borderWidth: 1, borderColor: '#27272a' },
-  menuIcon: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
-  banner: { backgroundColor: '#4f46e515', borderWidth: 1, borderColor: '#4f46e530', borderRadius: 16, padding: 20, marginBottom: 24 },
-  bannerTitle: { color: '#818cf8', fontSize: 18, fontWeight: 'bold', marginBottom: 6 },
-  bannerDesc: { color: '#a1a1aa', fontSize: 14, lineHeight: 20 },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  statCard: { flex: 1, backgroundColor: '#18181b', borderWidth: 1, borderColor: '#27272a', borderRadius: 12, padding: 16, alignItems: 'center' },
-  statLabel: { color: '#a1a1aa', fontSize: 12, fontWeight: '600' },
-  statVal: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginTop: 8 },
-  card: { backgroundColor: '#18181b', borderWidth: 1, borderColor: '#27272a', borderRadius: 16, padding: 20 },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
-  cardText: { color: '#a1a1aa', fontSize: 13, lineHeight: 20 }
+  container: { 
+    flex: 1, 
+    backgroundColor: '#09090b', 
+    paddingTop: 60 
+  },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 24, 
+    paddingHorizontal: 20 
+  },
+  greeting: { 
+    color: '#fff', 
+    fontSize: 24, 
+    fontWeight: 'bold' 
+  },
+  role: { 
+    color: '#a1a1aa', 
+    fontSize: 14 
+  },
+  menuBtn: { 
+    padding: 10, 
+    backgroundColor: '#18181b', 
+    borderRadius: 10, 
+    borderWidth: 1, 
+    borderColor: '#27272a' 
+  },
+  menuIcon: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: 'bold' 
+  },
+  scroll: { 
+    paddingHorizontal: 20, 
+    paddingBottom: 40 
+  },
+  banner: { 
+    backgroundColor: '#4f46e510', 
+    borderWidth: 1, 
+    borderColor: '#4f46e525', 
+    borderRadius: 16, 
+    padding: 20, 
+    marginBottom: 24 
+  },
+  bannerTitle: { 
+    color: '#818cf8', 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginBottom: 6 
+  },
+  bannerDesc: { 
+    color: '#a1a1aa', 
+    fontSize: 14, 
+    lineHeight: 20 
+  },
+  statsRow: { 
+    flexDirection: 'row', 
+    gap: 12, 
+    marginBottom: 24 
+  },
+  statCard: { 
+    flex: 1, 
+    backgroundColor: '#18181b', 
+    borderWidth: 1, 
+    borderColor: '#27272a', 
+    borderRadius: 14, 
+    padding: 16, 
+    alignItems: 'center' 
+  },
+  statLabel: { 
+    color: '#a1a1aa', 
+    fontSize: 12, 
+    fontWeight: '600' 
+  },
+  statVal: { 
+    color: '#fff', 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginTop: 8 
+  },
+  card: { 
+    backgroundColor: '#18181b', 
+    borderWidth: 1, 
+    borderColor: '#27272a', 
+    borderRadius: 16, 
+    padding: 20 
+  },
+  cardTitle: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    marginBottom: 12 
+  },
+  cardText: { 
+    color: '#a1a1aa', 
+    fontSize: 13, 
+    lineHeight: 22 
+  }
 });

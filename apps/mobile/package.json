@@ -4,7 +4,9 @@
   "main": "index.ts",
   "dependencies": {
     "@automatch/api-client": "workspace:^",
+    "@expo/vector-icons": "^15.1.1",
     "expo": "~56.0.9",
+    "expo-image": "^56.0.11",
     "expo-secure-store": "^56.0.4",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",

@@ -55,31 +55,45 @@ function decodeJWT(token: string) {
       decoded.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
     );
     return JSON.parse(utf8Decoded);
-  } catch (e) {
+  } catch {
     try {
       return JSON.parse(base64Decode(token.split('.')[1]));
-    } catch (err) {
+    } catch {
       return null;
     }
   }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedToken = localStorage.getItem('@AutoMatch:token');
+      if (savedToken) {
+        setAuthToken(savedToken);
+        return savedToken;
+      }
+    }
+    return null;
+  });
+
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedUser = localStorage.getItem('@AutoMatch:user');
+      if (savedUser) {
+        return JSON.parse(savedUser);
+      }
+    }
+    return null;
+  });
+
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('@AutoMatch:token');
-    const savedUser = localStorage.getItem('@AutoMatch:user');
-
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setAuthToken(savedToken);
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const login = async (credentials: LoginRequest, selectedRole: Role) => {

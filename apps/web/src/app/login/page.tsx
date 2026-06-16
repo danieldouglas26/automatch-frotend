@@ -45,8 +45,9 @@ export default function LoginPage() {
         setIsLogin(true);
         setPassword('');
       }
-    } catch (err: any) {
-      const traceId = err.response?.data?.requestId;
+    } catch (err: unknown) {
+      const errResponse = err as { response?: { data?: { requestId?: string } } };
+      const traceId = errResponse.response?.data?.requestId;
       const baseError = isLogin ? 'Credenciais inválidas.' : 'Erro ao criar conta. Tente novamente.';
       const fullError = traceId ? `${baseError} (Trace ID: ${traceId})` : baseError;
       setError(fullError);
