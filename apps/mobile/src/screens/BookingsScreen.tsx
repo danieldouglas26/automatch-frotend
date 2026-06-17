@@ -1,4 +1,4 @@
-// apps/mobile/src/screens/BookingsScreen.tsx
+// tela de listagem de agendamentos no app
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, 
@@ -34,14 +34,14 @@ export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void
       if (!user) return;
       try {
         setLoading(true);
-        // Busca agendamentos reais da API
+        // get agendamentos do backend
         const apiBookings = await BookingService.list({ clientId: user.id });
 
-        // Puxa cache local com nomes dos profissionais
+        // fallback do cache local
         const stored = await SecureStore.getItemAsync('automatch_bookings');
         const localCache = stored ? JSON.parse(stored) : [];
 
-        // Mescla com dados da API
+        // mescla api com local
         const mergedBookings = apiBookings.map((apiBooking: any) => {
           const matchedLocal = localCache.find((lc: any) => lc.id === apiBooking.id);
           

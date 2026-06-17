@@ -24,3 +24,13 @@ web-build/
 mock_endpoints/.venv/
 
 automatch-backend/
+
+# System files & OS Metadata
+.DS_Store
+Thumbs.db
+
+# AI & Agent instruction files
+agents.md
+AGENTS.md
+.gemini/
+antigravity/

@@ -1,4 +1,4 @@
-// apps/web/src/app/(dashboard)/agendamentos/page.tsx
+// view de agendamentos do cliente
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -37,6 +37,7 @@ export default function BookingsPage() {
   const [bookings, setBookings] = useState<LocalBooking[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // redireciona se nao for cliente
   useEffect(() => {
     if (user && user.role !== 'CLIENT') {
       router.replace('/visao-geral');
@@ -48,17 +49,17 @@ export default function BookingsPage() {
       if (!user || user.role !== 'CLIENT') return;
       try {
         setLoading(true);
-        // Busca os agendamentos reais da API
+        // get agendamentos do backend
         const apiBookings = await BookingService.list({ clientId: user.id });
         
-        // Obtém dados estéticos locais armazenados em cache
+        // pega nomes/detalhes salvos localmente
         const localCache: LocalCacheBooking[] = JSON.parse(localStorage.getItem('@AutoMatch:bookings') || '[]');
         
-        // Formata e mescla os dados da API com o cache local
+        // mescla api com dados locais
         const mergedBookings = apiBookings.map((apiBooking: ApiBookingItem) => {
           const matchedLocal = localCache.find((lc: LocalCacheBooking) => lc.id === apiBooking.id);
           
-          // Formata data de forma amigável
+          // converte data iso
           let formattedTime = apiBooking.appointmentTime;
           if (apiBooking.appointmentTime && apiBooking.appointmentTime.includes('T')) {
             const date = new Date(apiBooking.appointmentTime);

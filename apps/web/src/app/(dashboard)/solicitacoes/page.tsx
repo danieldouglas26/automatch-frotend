@@ -1,4 +1,4 @@
-// apps/web/src/app/(dashboard)/solicitacoes/page.tsx
+// painel de solicitacoes recebidas pelo mecanico
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -39,6 +39,7 @@ export default function RequestsPage() {
   const [requests, setRequests] = useState<LocalRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // redireciona se nao for mecanico
   useEffect(() => {
     if (user && user.role !== 'MECHANIC') {
       router.replace('/visao-geral');
@@ -50,10 +51,10 @@ export default function RequestsPage() {
       if (!user || user.role !== 'MECHANIC') return;
       try {
         setLoading(true);
-        // Busca todas as solicitações deste profissional na API
+        // puxa solicitacoes da api
         const apiBookings = await BookingService.list({ professionalId: user.id });
         
-        // Obtém o cache local para mesclar detalhes visuais adicionais
+        // localstorage cache fallback
         const localCache: LocalCacheRequest[] = JSON.parse(localStorage.getItem('@AutoMatch:requests') || '[]');
         
         const mergedRequests = apiBookings.map((apiBooking: ApiBookingItem) => {
@@ -99,10 +100,10 @@ export default function RequestsPage() {
 
   const handleStatusChange = async (id: string, newStatus: string, clientEmail: string) => {
     try {
-      // Chama a API PATCH para atualizar o status do agendamento
+      // patch de status na api
       await BookingService.updateStatus(id, { status: newStatus, clientEmail });
       
-      // Atualiza o estado na UI
+      // atualiza state do request
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
       toast.success(`Solicitação ${newStatus === 'APROVADO' ? 'aprovada' : 'rejeitada'} com sucesso!`);
     } catch (err: unknown) {

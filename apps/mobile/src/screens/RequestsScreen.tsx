@@ -1,4 +1,4 @@
-// apps/mobile/src/screens/RequestsScreen.tsx
+// painel de solicitacoes recebidas no mobile
 import React, { useEffect, useState, useRef } from 'react';
 import { 
   View, 
@@ -34,10 +34,10 @@ export default function RequestsScreen({ onOpenMenu }: { onOpenMenu?: () => void
       if (!user) return;
       try {
         setLoading(true);
-        // Busca todas as solicitações deste profissional na API
+        // busca solicitacoes da api
         const apiBookings = await BookingService.list({ professionalId: user.id });
 
-        // Puxa o cache local para mesclar detalhes visuais adicionais
+        // fallback do cache local
         const stored = await SecureStore.getItemAsync('automatch_requests');
         const localCache = stored ? JSON.parse(stored) : [];
 
@@ -84,10 +84,10 @@ export default function RequestsScreen({ onOpenMenu }: { onOpenMenu?: () => void
 
   const handleStatusChange = async (id: string, newStatus: string, clientEmail: string) => {
     try {
-      // Faz a chamada PATCH para atualizar o status na API
+      // patch de status da api
       await BookingService.updateStatus(id, { status: newStatus, clientEmail });
 
-      // Atualiza o estado visual na UI
+      // atualiza state visual
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
 
       Toast.show({
