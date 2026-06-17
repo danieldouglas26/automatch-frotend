@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { BookingService } from '@automatch/api-client';
+import { BookingService, ProfessionalService } from '@automatch/api-client';
 import { toast } from 'react-hot-toast';
 
 interface LocalBooking {
@@ -25,7 +25,7 @@ interface LocalCacheBooking {
   status: string;
 }
 
-import { BookingResponse } from '@automatch/api-client';
+import { BookingResponse, Professional } from '@automatch/api-client';
 
 interface ApiBookingItem extends BookingResponse {
   serviceName?: string;
@@ -49,15 +49,30 @@ export default function BookingsPage() {
       if (!user || user.role !== 'CLIENT') return;
       try {
         setLoading(true);
-        // get agendamentos do backend
-        const apiBookings = await BookingService.list({ clientId: user.id });
+        // busca agendamentos e catalogo de profissionais da api
+        const [apiBookings, catalog] = await Promise.all([
+          BookingService.list({ clientId: user.id }),
+          ProfessionalService.search()
+        ]);
         
+        // mapeia profissionais por ID
+        const catalogMap: Record<string, { name: string; specialty: string }> = {};
+        catalog.forEach((prof: Professional) => {
+          if (prof.id) {
+            catalogMap[prof.id] = {
+              name: `${prof.firstName} ${prof.lastName}`,
+              specialty: prof.specialty
+            };
+          }
+        });
+
         // pega nomes/detalhes salvos localmente
         const localCache: LocalCacheBooking[] = JSON.parse(localStorage.getItem('@AutoMatch:bookings') || '[]');
         
-        // mescla api com dados locais
+        // mescla api com dados locais e catalogo
         const mergedBookings = apiBookings.map((apiBooking: ApiBookingItem) => {
           const matchedLocal = localCache.find((lc: LocalCacheBooking) => lc.id === apiBooking.id);
+          const matchedCatalog = apiBooking.professionalId ? catalogMap[apiBooking.professionalId] : null;
           
           // converte data iso
           let formattedTime = apiBooking.appointmentTime;
@@ -74,8 +89,8 @@ export default function BookingsPage() {
 
           return {
             id: apiBooking.id || '',
-            professionalName: matchedLocal?.professionalName || `Oficina Parceira (Ref: ${apiBooking.professionalId.substring(0, 8)})`,
-            specialty: matchedLocal?.specialty || "Serviço Mecânico",
+            professionalName: matchedCatalog?.name || matchedLocal?.professionalName || "Oficina Parceira",
+            specialty: matchedCatalog?.specialty || matchedLocal?.specialty || "Serviço Mecânico",
             serviceName: apiBooking.serviceName || "Revisão Geral",
             appointmentTime: formattedTime,
             status: apiBooking.status || "PENDENTE"

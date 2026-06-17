@@ -10,11 +10,11 @@ import {
   Animated 
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
-import * as SecureStore from 'expo-secure-store';
+import { BookingService } from '@automatch/api-client';
 
 export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void }) {
   const { user } = useAuth();
-  const [stats, setStats] = useState({ bookingsCount: 0, rating: '4.8 ★', status: 'Ativo' });
+  const [bookingsCount, setBookingsCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -29,23 +29,20 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
 
   useEffect(() => {
     async function loadStats() {
+      if (!user) return;
       try {
-        if (user?.role === 'CLIENT') {
-          const stored = await SecureStore.getItemAsync('automatch_bookings');
-          const bookings = stored ? JSON.parse(stored) : [];
-          setStats({ bookingsCount: bookings.length, rating: '12 / 15', status: 'Excelente' });
+        setLoading(true);
+        let count = 0;
+        if (user.role === 'CLIENT') {
+          const apiBookings = await BookingService.list({ clientId: user.id });
+          count = apiBookings.length;
         } else {
-          const stored = await SecureStore.getItemAsync('automatch_requests');
-          const requests = stored ? JSON.parse(stored) : [];
-          const approved = requests.filter((r: any) => r.status === 'APROVADO').length;
-          setStats({
-            bookingsCount: requests.length,
-            rating: requests.length > 0 ? `${Math.min(5.0, 4.5 + (approved * 0.1)).toFixed(1)} ★` : '4.8 ★',
-            status: 'Visível'
-          });
+          const apiBookings = await BookingService.list({ professionalId: user.id });
+          count = apiBookings.length;
         }
+        setBookingsCount(count);
       } catch (err) {
-        console.error("Erro ao carregar estatísticas", err);
+        console.error("Erro ao carregar estatísticas no mobile", err);
       } finally {
         setLoading(false);
       }
@@ -83,17 +80,9 @@ export default function OverviewScreen({ onOpenMenu }: { onOpenMenu?: () => void
           <ActivityIndicator size="small" color="#4f46e5" style={{ marginTop: 20 }} />
         ) : (
           <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>{user?.role === 'CLIENT' ? 'Agendamentos' : 'Serviços'}</Text>
-              <Text style={styles.statVal}>{stats.bookingsCount}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>{user?.role === 'CLIENT' ? 'Oficinas' : 'Avaliação'}</Text>
-              <Text style={styles.statVal}>{stats.rating}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Status</Text>
-              <Text style={[styles.statVal, { color: '#818cf8', fontSize: 16, marginTop: 12 }]}>{stats.status}</Text>
+            <View style={[styles.statCard, { flex: 0, width: '100%', maxWidth: 200, alignSelf: 'flex-start' }]}>
+              <Text style={styles.statLabel} numberOfLines={1} adjustsFontSizeToFit>{user?.role === 'CLIENT' ? 'Agendamentos' : 'Serviços'}</Text>
+              <Text style={styles.statVal}>{bookingsCount}</Text>
             </View>
           </View>
         )}
@@ -183,8 +172,9 @@ const styles = StyleSheet.create({
   },
   statLabel: { 
     color: '#a1a1aa', 
-    fontSize: 12, 
-    fontWeight: '600' 
+    fontSize: 11, 
+    fontWeight: '600',
+    textAlign: 'center'
   },
   statVal: { 
     color: '#fff', 

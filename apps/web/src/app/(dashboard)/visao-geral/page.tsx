@@ -1,54 +1,55 @@
-// apps/web/src/app/(dashboard)/overview/page.tsx
+// apps/web/src/app/(dashboard)/visao-geral/page.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { BookingService } from '@automatch/api-client';
 
 export default function OverviewPage() {
   const { user } = useAuth();
   const router = useRouter();
   const isClient = user?.role === 'CLIENT';
-  const [stats] = useState(() => {
-    if (typeof window !== 'undefined' && user) {
-      if (user.role === 'CLIENT') {
-        const bookings = JSON.parse(localStorage.getItem('@AutoMatch:bookings') || '[]');
-        return { bookingsCount: bookings.length, rating: '12 / 15', status: 'Excelente' };
-      } else {
-        const requests = JSON.parse(localStorage.getItem('@AutoMatch:requests') || '[]');
-        const approved = requests.filter((r: { status: string }) => r.status === 'APROVADO').length;
-        return { 
-          bookingsCount: requests.length, 
-          rating: requests.length > 0 ? `${Math.min(5.0, 4.5 + (approved * 0.1)).toFixed(1)} ★` : '4.8 ★', 
-          status: 'Visível' 
-        };
+  const [bookingsCount, setBookingsCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStats() {
+      if (!user) return;
+      try {
+        setLoading(true);
+        let count = 0;
+        if (user.role === 'CLIENT') {
+          const apiBookings = await BookingService.list({ clientId: user.id });
+          count = apiBookings.length;
+        } else {
+          const apiBookings = await BookingService.list({ professionalId: user.id });
+          count = apiBookings.length;
+        }
+        setBookingsCount(count);
+      } catch (err) {
+        console.error("Erro ao obter estatísticas da API", err);
+      } finally {
+        setLoading(false);
       }
     }
-    return { bookingsCount: 0, rating: '4.8 ★', status: 'Ativo' };
-  });
+    loadStats();
+  }, [user]);
 
   if (!user) return null;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 max-w-sm">
         <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
           <p className="text-zinc-400 text-xs sm:text-sm font-medium">
             {isClient ? 'Agendamentos Ativos' : 'Serviços Solicitados'}
           </p>
-          <p className="text-2xl sm:text-3xl font-black text-white mt-2">{stats.bookingsCount}</p>
-        </div>
-        
-        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm">
-          <p className="text-zinc-400 text-xs sm:text-sm font-medium">
-            {isClient ? 'Mecânicos Disponíveis' : 'Sua Avaliação'}
-          </p>
-          <p className="text-2xl sm:text-3xl font-black text-white mt-2">{stats.rating}</p>
-        </div>
-        
-        <div className="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-sm sm:col-span-2 md:col-span-1">
-          <p className="text-zinc-400 text-xs sm:text-sm font-medium">Status do Perfil</p>
-          <p className="text-2xl sm:text-3xl font-black text-indigo-400 mt-2">{stats.status}</p>
+          {loading ? (
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-500 mt-3"></div>
+          ) : (
+            <p className="text-2xl sm:text-3xl font-black text-white mt-2">{bookingsCount}</p>
+          )}
         </div>
       </div>
 

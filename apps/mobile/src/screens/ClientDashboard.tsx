@@ -61,7 +61,7 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
         clientEmail: user!.email,
         professionalId: prof.id,
         professionalEmail: "contato@oficina.com",
-        serviceName: "Agendamento via App",
+        serviceName: "Revisão Geral",
         appointmentTime: new Date().toISOString()
       });
 
@@ -69,7 +69,7 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
         id: response.id || Math.random().toString(),
         professionalName: `${prof.firstName} ${prof.lastName}`,
         specialty: prof.specialty,
-        serviceName: "Agendamento via App",
+        serviceName: "Revisão Geral",
         appointmentTime: new Date().toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         status: response.status || "PENDENTE"
       };
@@ -83,7 +83,7 @@ export default function ClientDashboard({ onOpenMenu }: { onOpenMenu?: () => voi
         id: newBooking.id,
         clientName: `${user?.firstName} ${user?.lastName}`,
         clientEmail: user?.email,
-        serviceName: "Agendamento via App",
+        serviceName: "Revisão Geral",
         appointmentTime: newBooking.appointmentTime,
         status: "PENDENTE"
       };

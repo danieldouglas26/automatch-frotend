@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuth } from '../contexts/AuthContext';
-import { BookingService } from '@automatch/api-client';
+import { BookingService, ProfessionalService } from '@automatch/api-client';
 import Toast from 'react-native-toast-message';
 
 export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void }) {
@@ -34,8 +34,22 @@ export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void
       if (!user) return;
       try {
         setLoading(true);
-        // get agendamentos do backend
-        const apiBookings = await BookingService.list({ clientId: user.id });
+        // busca agendamentos reais e catalogo de profissionais da api
+        const [apiBookings, catalog] = await Promise.all([
+          BookingService.list({ clientId: user.id }),
+          ProfessionalService.search()
+        ]);
+
+        // mapeia profissionais por ID
+        const catalogMap: Record<string, { name: string; specialty: string }> = {};
+        catalog.forEach((prof: any) => {
+          if (prof.id) {
+            catalogMap[prof.id] = {
+              name: `${prof.firstName} ${prof.lastName}`,
+              specialty: prof.specialty
+            };
+          }
+        });
 
         // fallback do cache local
         const stored = await SecureStore.getItemAsync('automatch_bookings');
@@ -44,6 +58,7 @@ export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void
         // mescla api com local
         const mergedBookings = apiBookings.map((apiBooking: any) => {
           const matchedLocal = localCache.find((lc: any) => lc.id === apiBooking.id);
+          const matchedCatalog = catalogMap[apiBooking.professionalId];
           
           let formattedTime = apiBooking.appointmentTime;
           if (apiBooking.appointmentTime && apiBooking.appointmentTime.includes('T')) {
@@ -59,8 +74,8 @@ export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void
 
           return {
             id: apiBooking.id,
-            professionalName: matchedLocal?.professionalName || `Oficina Parceira (Ref: ${apiBooking.professionalId.substring(0, 8)})`,
-            specialty: matchedLocal?.specialty || "Serviço Mecânico",
+            professionalName: matchedCatalog?.name || matchedLocal?.professionalName || "Oficina Parceira",
+            specialty: matchedCatalog?.specialty || matchedLocal?.specialty || "Serviço Mecânico",
             serviceName: apiBooking.serviceName || "Revisão Geral",
             appointmentTime: formattedTime,
             status: apiBooking.status || "PENDENTE"
