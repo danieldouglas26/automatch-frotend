@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { BookingService } from '@automatch/api-client';
-import { toast } from 'sonner';
+import { toast } from 'react-hot-toast';
 
 interface LocalRequest {
   id: string;
