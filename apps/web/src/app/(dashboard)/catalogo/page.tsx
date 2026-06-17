@@ -10,10 +10,12 @@ import { toast } from 'react-hot-toast';
 export default function CatalogPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
-  const [specialty, setSpecialty] = useState('Mecânico Geral');
-  const [services, setServices] = useState('Troca de Óleo, Freios');
+  
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [services, setServices] = useState('');
+  const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
@@ -21,6 +23,30 @@ export default function CatalogPage() {
       router.replace('/visao-geral');
     }
   }, [user, router]);
+
+  useEffect(() => {
+    async function loadCatalog() {
+      if (!user || user.role !== 'MECHANIC') return;
+      try {
+        setLoading(true);
+        const data = await ProfessionalService.get(user.id);
+        if (data) {
+          setFirstName(data.firstName || user.firstName || '');
+          setLastName(data.lastName || user.lastName || '');
+          setSpecialty(data.specialty || '');
+          setServices(data.services?.join(', ') || '');
+        }
+      } catch (err) {
+        console.error("Erro ao obter dados do catálogo", err);
+        // Novo profissional pode receber 404, então iniciamos com dados básicos do usuário logado
+        setFirstName(user.firstName || '');
+        setLastName(user.lastName || '');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCatalog();
+  }, [user]);
 
   if (!user || user.role !== 'MECHANIC') return null;
 
@@ -32,7 +58,7 @@ export default function CatalogPage() {
         firstName,
         lastName,
         specialty,
-        services: services.split(',').map(s => s.trim()),
+        services: services.split(',').map(s => s.trim()).filter(Boolean),
         active: true
       };
       await ProfessionalService.update(user.id, payload);
@@ -45,6 +71,14 @@ export default function CatalogPage() {
       setIsUpdating(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 p-5 sm:p-6 rounded-2xl shadow-sm max-w-2xl animate-fade-in">
@@ -59,7 +93,7 @@ export default function CatalogPage() {
               disabled={isUpdating} 
               value={firstName} 
               onChange={e => setFirstName(e.target.value)} 
-              className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white disabled:opacity-50 text-sm animate-pulse-once" 
+              className="w-full mt-1 px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl outline-none focus:ring-1 focus:ring-indigo-500 text-white disabled:opacity-50 text-sm" 
             />
           </div>
           <div>

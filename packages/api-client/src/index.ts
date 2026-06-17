@@ -71,6 +71,12 @@ export const ProfessionalService = {
     return response.data;
   },
   
+  // Busca o perfil de um profissional específico por ID
+  get: async (id: string): Promise<Professional> => {
+    const response = await api.get(`/professionals/${id}`);
+    return response.data;
+  },
+  
   // Equivalente a ProfessionalController.update
   update: async (id: string, data: UpdateProfessionalRequest): Promise<Professional> => {
     const response = await api.put(`/professionals/${id}`, data);

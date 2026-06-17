@@ -18,22 +18,51 @@ import Toast from 'react-native-toast-message';
 
 export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => void }) {
   const { user, logout } = useAuth();
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
-  const [specialty, setSpecialty] = useState('Mecânico Geral');
-  const [services, setServices] = useState('Troca de Óleo, Freios');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [services, setServices] = useState('');
+  const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+    async function loadCatalog() {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const data = await ProfessionalService.get(user.id);
+        if (data) {
+          setFirstName(data.firstName || user.firstName || '');
+          setLastName(data.lastName || user.lastName || '');
+          setSpecialty(data.specialty || '');
+          setServices(data.services?.join(', ') || '');
+        }
+      } catch (err) {
+        console.error("Erro ao obter dados do catálogo", err);
+        // Novo profissional pode receber 404, então iniciamos com dados básicos do usuário logado
+        setFirstName(user.firstName || '');
+        setLastName(user.lastName || '');
+        setSpecialty('');
+        setServices('');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCatalog();
+  }, [user]);
+
+  useEffect(() => {
+    if (!loading) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [loading]);
 
   const handleUpdate = async () => {
     setIsUpdating(true);
@@ -42,7 +71,7 @@ export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => v
         firstName,
         lastName,
         specialty,
-        services: services.split(',').map(s => s.trim()),
+        services: services.split(',').map(s => s.trim()).filter(Boolean),
         active: true
       };
       await ProfessionalService.update(user!.id, payload);
@@ -90,97 +119,103 @@ export default function MechanicDashboard({ onOpenMenu }: { onOpenMenu?: () => v
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
-          <Text style={styles.cardTitle}>Meu Perfil Profissional (Catálogo)</Text>
-          <Text style={styles.cardDesc}>Atualize suas informações para que os clientes te encontrem nas buscas.</Text>
-          
-          <View style={styles.formGroup}>
-             <Text style={styles.label}>Nome</Text>
-             <TextInput 
-                style={[
-                  styles.input, 
-                  focusedField === 'firstName' && styles.inputFocused,
-                  isUpdating && { opacity: 0.5 }
-                ]} 
-                value={firstName} 
-                onChangeText={setFirstName} 
-                placeholderTextColor="#71717a" 
-                editable={!isUpdating} 
-                onFocus={() => setFocusedField('firstName')}
-                onBlur={() => setFocusedField(null)}
-             />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#6366f1" />
           </View>
-          
-          <View style={styles.formGroup}>
-             <Text style={styles.label}>Sobrenome</Text>
-             <TextInput 
-                style={[
-                  styles.input, 
-                  focusedField === 'lastName' && styles.inputFocused,
-                  isUpdating && { opacity: 0.5 }
-                ]} 
-                value={lastName} 
-                onChangeText={setLastName} 
-                placeholderTextColor="#71717a" 
-                editable={!isUpdating} 
-                onFocus={() => setFocusedField('lastName')}
-                onBlur={() => setFocusedField(null)}
-             />
-          </View>
+        ) : (
+          <Animated.View style={[styles.card, { opacity: fadeAnim }]}>
+            <Text style={styles.cardTitle}>Meu Perfil Profissional (Catálogo)</Text>
+            <Text style={styles.cardDesc}>Atualize suas informações para que os clientes te encontrem nas buscas.</Text>
+            
+            <View style={styles.formGroup}>
+               <Text style={styles.label}>Nome</Text>
+               <TextInput 
+                  style={[
+                    styles.input, 
+                    focusedField === 'firstName' && styles.inputFocused,
+                    isUpdating && { opacity: 0.5 }
+                  ]} 
+                  value={firstName} 
+                  onChangeText={setFirstName} 
+                  placeholderTextColor="#71717a" 
+                  editable={!isUpdating} 
+                  onFocus={() => setFocusedField('firstName')}
+                  onBlur={() => setFocusedField(null)}
+               />
+            </View>
+            
+            <View style={styles.formGroup}>
+               <Text style={styles.label}>Sobrenome</Text>
+               <TextInput 
+                  style={[
+                    styles.input, 
+                    focusedField === 'lastName' && styles.inputFocused,
+                    isUpdating && { opacity: 0.5 }
+                  ]} 
+                  value={lastName} 
+                  onChangeText={setLastName} 
+                  placeholderTextColor="#71717a" 
+                  editable={!isUpdating} 
+                  onFocus={() => setFocusedField('lastName')}
+                  onBlur={() => setFocusedField(null)}
+               />
+            </View>
 
-          <View style={styles.formGroup}>
-             <Text style={styles.label}>Especialidade Principal</Text>
-             <TextInput 
-                style={[
-                  styles.input, 
-                  focusedField === 'specialty' && styles.inputFocused,
-                  isUpdating && { opacity: 0.5 }
-                ]} 
-                value={specialty} 
-                onChangeText={setSpecialty} 
-                placeholder="Ex: Eletricista Automotivo" 
-                placeholderTextColor="#71717a" 
-                editable={!isUpdating} 
-                onFocus={() => setFocusedField('specialty')}
-                onBlur={() => setFocusedField(null)}
-             />
-          </View>
+            <View style={styles.formGroup}>
+               <Text style={styles.label}>Especialidade Principal</Text>
+               <TextInput 
+                  style={[
+                    styles.input, 
+                    focusedField === 'specialty' && styles.inputFocused,
+                    isUpdating && { opacity: 0.5 }
+                  ]} 
+                  value={specialty} 
+                  onChangeText={setSpecialty} 
+                  placeholder="Ex: Eletricista Automotivo" 
+                  placeholderTextColor="#71717a" 
+                  editable={!isUpdating} 
+                  onFocus={() => setFocusedField('specialty')}
+                  onBlur={() => setFocusedField(null)}
+               />
+            </View>
 
-          <View style={styles.formGroup}>
-             <Text style={styles.label}>Serviços Oferecidos (separados por vírgula)</Text>
-             <TextInput 
-                style={[
-                  styles.input, 
-                  focusedField === 'services' && styles.inputFocused,
-                  isUpdating && { opacity: 0.5 }
-                ]} 
-                value={services} 
-                onChangeText={setServices} 
-                placeholder="Ex: Alinhamento, Balanceamento" 
-                placeholderTextColor="#71717a" 
-                editable={!isUpdating}
-                onFocus={() => setFocusedField('services')}
-                onBlur={() => setFocusedField(null)}
-             />
-          </View>
+            <View style={styles.formGroup}>
+               <Text style={styles.label}>Serviços Oferecidos (separados por vírgula)</Text>
+               <TextInput 
+                  style={[
+                    styles.input, 
+                    focusedField === 'services' && styles.inputFocused,
+                    isUpdating && { opacity: 0.5 }
+                  ]} 
+                  value={services} 
+                  onChangeText={setServices} 
+                  placeholder="Ex: Alinhamento, Balanceamento" 
+                  placeholderTextColor="#71717a" 
+                  editable={!isUpdating}
+                  onFocus={() => setFocusedField('services')}
+                  onBlur={() => setFocusedField(null)}
+               />
+            </View>
 
-          <TouchableOpacity 
-            style={[
-              styles.updateBtn, 
-              isUpdating && { opacity: 0.7 }, 
-              { flexDirection: 'row', justifyContent: 'center', gap: 8 }
-            ]} 
-            onPress={handleUpdate} 
-            disabled={isUpdating}
-            activeOpacity={0.8}
-          >
-             {isUpdating ? (
-               <ActivityIndicator size="small" color="#fff" />
-             ) : (
-               <Text style={styles.updateTxt}>Atualizar Catálogo</Text>
-             )}
-          </TouchableOpacity>
-        </Animated.View>
+            <TouchableOpacity 
+              style={[
+                styles.updateBtn, 
+                isUpdating && { opacity: 0.7 }, 
+                { flexDirection: 'row', justifyContent: 'center', gap: 8 }
+              ]} 
+              onPress={handleUpdate} 
+              disabled={isUpdating}
+              activeOpacity={0.8}
+            >
+               {isUpdating ? (
+                 <ActivityIndicator size="small" color="#fff" />
+               ) : (
+                 <Text style={styles.updateTxt}>Atualizar Catálogo</Text>
+               )}
+            </TouchableOpacity>
+          </Animated.View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -298,5 +333,10 @@ const styles = StyleSheet.create({
     color: '#fff', 
     fontWeight: 'bold', 
     fontSize: 16 
+  },
+  loadingContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center'
   }
 });
