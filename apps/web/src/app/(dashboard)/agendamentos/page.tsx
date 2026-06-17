@@ -1,9 +1,11 @@
-// apps/web/src/app/(dashboard)/bookings/page.tsx
+// apps/web/src/app/(dashboard)/agendamentos/page.tsx
 'use client';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { BookingService } from '@automatch/api-client';
+import { toast } from 'sonner';
 
 interface LocalBooking {
   id: string;
@@ -14,17 +16,26 @@ interface LocalBooking {
   status: string;
 }
 
+interface LocalCacheBooking {
+  id: string;
+  professionalName: string;
+  specialty: string;
+  serviceName: string;
+  appointmentTime: string;
+  status: string;
+}
+
+import { BookingResponse } from '@automatch/api-client';
+
+interface ApiBookingItem extends BookingResponse {
+  serviceName?: string;
+}
+
 export default function BookingsPage() {
   const { user } = useAuth();
   const router = useRouter();
-
-  const [bookings] = useState<LocalBooking[]>(() => {
-    if (typeof window !== 'undefined') {
-      const data = localStorage.getItem('@AutoMatch:bookings');
-      return data ? JSON.parse(data) : [];
-    }
-    return [];
-  });
+  const [bookings, setBookings] = useState<LocalBooking[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user && user.role !== 'CLIENT') {
@@ -32,12 +43,69 @@ export default function BookingsPage() {
     }
   }, [user, router]);
 
+  useEffect(() => {
+    async function loadBookings() {
+      if (!user || user.role !== 'CLIENT') return;
+      try {
+        setLoading(true);
+        // Busca os agendamentos reais da API
+        const apiBookings = await BookingService.list({ clientId: user.id });
+        
+        // Obtém dados estéticos locais armazenados em cache
+        const localCache: LocalCacheBooking[] = JSON.parse(localStorage.getItem('@AutoMatch:bookings') || '[]');
+        
+        // Formata e mescla os dados da API com o cache local
+        const mergedBookings = apiBookings.map((apiBooking: ApiBookingItem) => {
+          const matchedLocal = localCache.find((lc: LocalCacheBooking) => lc.id === apiBooking.id);
+          
+          // Formata data de forma amigável
+          let formattedTime = apiBooking.appointmentTime;
+          if (apiBooking.appointmentTime && apiBooking.appointmentTime.includes('T')) {
+            const date = new Date(apiBooking.appointmentTime);
+            formattedTime = date.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+
+          return {
+            id: apiBooking.id || '',
+            professionalName: matchedLocal?.professionalName || `Oficina Parceira (Ref: ${apiBooking.professionalId.substring(0, 8)})`,
+            specialty: matchedLocal?.specialty || "Serviço Mecânico",
+            serviceName: apiBooking.serviceName || "Revisão Geral",
+            appointmentTime: formattedTime,
+            status: apiBooking.status || "PENDENTE"
+          };
+        });
+
+        setBookings(mergedBookings);
+      } catch (err: unknown) {
+        console.error("Erro ao carregar agendamentos", err);
+        const errorResponse = err as { response?: { data?: { requestId?: string } } };
+        const traceId = errorResponse.response?.data?.requestId;
+        toast.error(`Erro ao carregar agendamentos da API. ${traceId ? `(Trace ID: ${traceId})` : ''}`);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadBookings();
+  }, [user]);
+
   if (!user || user.role !== 'CLIENT') return null;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <h2 className="text-lg sm:text-xl font-bold text-white">Meus Agendamentos</h2>
-      {bookings.length === 0 ? (
+      
+      {loading ? (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+        </div>
+      ) : bookings.length === 0 ? (
         <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl text-center text-zinc-400 text-sm">
           Você não possui agendamentos marcados no momento.
         </div>

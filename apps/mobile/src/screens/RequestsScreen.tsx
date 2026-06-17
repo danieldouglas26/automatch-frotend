@@ -10,8 +10,12 @@ import {
   Animated
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '../contexts/AuthContext';
+import { BookingService } from '@automatch/api-client';
+import Toast from 'react-native-toast-message';
 
 export default function RequestsScreen({ onOpenMenu }: { onOpenMenu?: () => void }) {
+  const { user } = useAuth();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,38 +31,78 @@ export default function RequestsScreen({ onOpenMenu }: { onOpenMenu?: () => void
 
   useEffect(() => {
     async function loadRequests() {
+      if (!user) return;
       try {
+        setLoading(true);
+        // Busca todas as solicitações deste profissional na API
+        const apiBookings = await BookingService.list({ professionalId: user.id });
+
+        // Puxa o cache local para mesclar detalhes visuais adicionais
         const stored = await SecureStore.getItemAsync('automatch_requests');
-        if (stored) {
-          setRequests(JSON.parse(stored));
-        } else {
-          const defaultRequests: any[] = [];
-          await SecureStore.setItemAsync('automatch_requests', JSON.stringify(defaultRequests));
-          setRequests(defaultRequests);
-        }
-      } catch (err) {
-        console.error("Erro ao obter solicitações", err);
+        const localCache = stored ? JSON.parse(stored) : [];
+
+        const mergedRequests = apiBookings.map((apiBooking: any) => {
+          const matchedLocal = localCache.find((lc: any) => lc.id === apiBooking.id);
+          
+          let formattedTime = apiBooking.appointmentTime;
+          if (apiBooking.appointmentTime && apiBooking.appointmentTime.includes('T')) {
+            const date = new Date(apiBooking.appointmentTime);
+            formattedTime = date.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+
+          return {
+            id: apiBooking.id,
+            clientName: matchedLocal?.clientName || "Cliente AutoMatch",
+            clientEmail: matchedLocal?.clientEmail || apiBooking.clientEmail || "cliente@automatch.com",
+            serviceName: apiBooking.serviceName || "Revisão Geral",
+            appointmentTime: formattedTime,
+            status: apiBooking.status || "PENDENTE"
+          };
+        });
+
+        setRequests(mergedRequests);
+      } catch (err: any) {
+        console.error("Erro ao carregar solicitações no mobile", err);
+        const traceId = err.response?.data?.requestId;
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao carregar solicitações',
+          text2: traceId ? `Trace ID: ${traceId}` : 'Por favor, tente novamente'
+        });
       } finally {
         setLoading(false);
       }
     }
     loadRequests();
-  }, []);
+  }, [user]);
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    const updated = requests.map(r => r.id === id ? { ...r, status: newStatus } : r);
-    setRequests(updated);
-    await SecureStore.setItemAsync('automatch_requests', JSON.stringify(updated));
-
+  const handleStatusChange = async (id: string, newStatus: string, clientEmail: string) => {
     try {
-      const storedBookings = await SecureStore.getItemAsync('automatch_bookings');
-      if (storedBookings) {
-        const bookings = JSON.parse(storedBookings);
-        const updatedBookings = bookings.map((b: any) => b.id === id ? { ...b, status: newStatus } : b);
-        await SecureStore.setItemAsync('automatch_bookings', JSON.stringify(updatedBookings));
-      }
-    } catch (e) {
-      console.log("Erro ao atualizar agendamentos pareados", e);
+      // Faz a chamada PATCH para atualizar o status na API
+      await BookingService.updateStatus(id, { status: newStatus, clientEmail });
+
+      // Atualiza o estado visual na UI
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+
+      Toast.show({
+        type: 'success',
+        text1: `Solicitação ${newStatus === 'APROVADO' ? 'aprovada' : 'rejeitada'}`,
+        text2: 'O status do agendamento foi atualizado.'
+      });
+    } catch (err: any) {
+      console.error("Erro ao alterar status no mobile", err);
+      const traceId = err.response?.data?.requestId;
+      Toast.show({
+        type: 'error',
+        text1: 'Erro ao alterar status',
+        text2: traceId ? `Trace ID: ${traceId}` : 'Não foi possível completar a ação'
+      });
     }
   };
 
@@ -96,7 +140,7 @@ export default function RequestsScreen({ onOpenMenu }: { onOpenMenu?: () => void
                 </View>
                 {item.status !== 'PENDENTE' && (
                   <View style={[styles.statusTag, item.status === 'APROVADO' ? styles.statusApproved : styles.statusRejected]}>
-                    <Text style={[styles.statusText, item.status === 'APROVADO' ? styles.statusTextApproved : styles.statusTextRejected]}>
+                    <Text style={[styles.statusText, item.status === 'APROVADO' ? styles.statusTextApproved : item.status === 'REJEITADO' ? styles.statusTextRejected : styles.statusTextPending]}>
                       {item.status}
                     </Text>
                   </View>
@@ -112,14 +156,14 @@ export default function RequestsScreen({ onOpenMenu }: { onOpenMenu?: () => void
                 <View style={styles.actionRow}>
                   <TouchableOpacity 
                     style={styles.approveBtn} 
-                    onPress={() => handleStatusChange(item.id, 'APROVADO')}
+                    onPress={() => handleStatusChange(item.id, 'APROVADO', item.clientEmail)}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.approveTxt}>Aprovar</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.rejectBtn} 
-                    onPress={() => handleStatusChange(item.id, 'REJEITADO')}
+                    onPress={() => handleStatusChange(item.id, 'REJEITADO', item.clientEmail)}
                     activeOpacity={0.8}
                   >
                     <Text style={styles.rejectTxt}>Recusar</Text>

@@ -94,5 +94,67 @@ export const BookingService = {
       }
     });
     return response.data;
+  },
+
+  // Listagem de agendamentos com filtros e paginação
+  list: async (params?: {
+    status?: string;
+    clientId?: string;
+    professionalId?: string;
+    page?: number;
+    size?: number;
+  }): Promise<any> => {
+    const queryParams: any = { ...params };
+    
+    // Traduz status do front (PT) para o back (EN)
+    if (queryParams.status) {
+      if (queryParams.status === 'PENDENTE') queryParams.status = 'PENDING';
+      else if (queryParams.status === 'APROVADO') queryParams.status = 'APPROVED';
+      else if (queryParams.status === 'REJEITADO') queryParams.status = 'REJECTED';
+    }
+
+    const response = await api.get('/bookings', { params: queryParams });
+    const data = response.data;
+
+    // Função interna para mapear os status vindos do back para o front
+    const mapBooking = (b: any) => ({
+      ...b,
+      status: b.status === 'PENDING' ? 'PENDENTE' : 
+              b.status === 'APPROVED' ? 'APROVADO' : 
+              b.status === 'REJECTED' ? 'REJEITADO' : b.status
+    });
+
+    // Se o back retornar estrutura paginada (com campo content)
+    if (data && Array.isArray(data.content)) {
+      return {
+        ...data,
+        content: data.content.map(mapBooking)
+      };
+    }
+
+    // Se retornar uma lista direta
+    if (Array.isArray(data)) {
+      return data.map(mapBooking);
+    }
+
+    return data;
+  },
+
+  // Atualização de status de agendamento (PATCH)
+  updateStatus: async (
+    id: string,
+    data: { status: string; clientEmail: string }
+  ): Promise<any> => {
+    // Traduz status do front (PT) para o back (EN)
+    let backendStatus = data.status;
+    if (data.status === 'PENDENTE') backendStatus = 'PENDING';
+    else if (data.status === 'APROVADO') backendStatus = 'APPROVED';
+    else if (data.status === 'REJEITADO') backendStatus = 'REJECTED';
+
+    const response = await api.patch(`/bookings/${id}/status`, {
+      status: backendStatus,
+      clientEmail: data.clientEmail
+    });
+    return response.data;
   }
 };

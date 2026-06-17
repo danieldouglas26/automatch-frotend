@@ -10,8 +10,12 @@ import {
   Animated
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { useAuth } from '../contexts/AuthContext';
+import { BookingService } from '@automatch/api-client';
+import Toast from 'react-native-toast-message';
 
 export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void }) {
+  const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,23 +31,57 @@ export default function BookingsScreen({ onOpenMenu }: { onOpenMenu?: () => void
 
   useEffect(() => {
     async function loadBookings() {
+      if (!user) return;
       try {
+        setLoading(true);
+        // Busca agendamentos reais da API
+        const apiBookings = await BookingService.list({ clientId: user.id });
+
+        // Puxa cache local com nomes dos profissionais
         const stored = await SecureStore.getItemAsync('automatch_bookings');
-        if (stored) {
-          setBookings(JSON.parse(stored));
-        } else {
-          const defaultBookings: any[] = [];
-          await SecureStore.setItemAsync('automatch_bookings', JSON.stringify(defaultBookings));
-          setBookings(defaultBookings);
-        }
-      } catch (err) {
-        console.error("Erro ao obter agendamentos", err);
+        const localCache = stored ? JSON.parse(stored) : [];
+
+        // Mescla com dados da API
+        const mergedBookings = apiBookings.map((apiBooking: any) => {
+          const matchedLocal = localCache.find((lc: any) => lc.id === apiBooking.id);
+          
+          let formattedTime = apiBooking.appointmentTime;
+          if (apiBooking.appointmentTime && apiBooking.appointmentTime.includes('T')) {
+            const date = new Date(apiBooking.appointmentTime);
+            formattedTime = date.toLocaleString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+
+          return {
+            id: apiBooking.id,
+            professionalName: matchedLocal?.professionalName || `Oficina Parceira (Ref: ${apiBooking.professionalId.substring(0, 8)})`,
+            specialty: matchedLocal?.specialty || "Serviço Mecânico",
+            serviceName: apiBooking.serviceName || "Revisão Geral",
+            appointmentTime: formattedTime,
+            status: apiBooking.status || "PENDENTE"
+          };
+        });
+
+        setBookings(mergedBookings);
+      } catch (err: any) {
+        console.error("Erro ao carregar agendamentos do mobile", err);
+        const traceId = err.response?.data?.requestId;
+        Toast.show({
+          type: 'error',
+          text1: 'Erro ao carregar agendamentos',
+          text2: traceId ? `Trace ID: ${traceId}` : 'Por favor, tente novamente'
+        });
       } finally {
         setLoading(false);
       }
     }
     loadBookings();
-  }, []);
+  }, [user]);
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
