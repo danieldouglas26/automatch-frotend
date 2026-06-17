@@ -70,6 +70,7 @@ jobs:
             cd automatch-frontend/prod
             echo "IMAGE_TAG=${{ github.sha }}" > .env
             echo "GITHUB_REPOSITORY=${{ github.repository }}" >> .env
+            docker network inspect automatch-net-prod >/dev/null 2>&1 || docker network create automatch-net-prod
             docker compose -p automatch-web-prod -f docker-compose.frontend.yml pull
             docker compose -p automatch-web-prod -f docker-compose.frontend.yml up -d
             docker system prune -af

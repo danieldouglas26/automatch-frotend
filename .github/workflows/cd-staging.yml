@@ -48,15 +48,15 @@ jobs:
             services:
               web-app:
                 image: ghcr.io/${GITHUB_REPOSITORY}/web-app:${IMAGE_TAG:-latest}
-                container_name: automatch-web-prod
+                container_name: automatch-web-staging
                 ports:
-                  - "3000:3000"
+                  - "3001:3000"
                 restart: always
                 networks:
-                  - automatch-net-prod
+                  - automatch-net-staging
 
             networks:
-              automatch-net-prod:
+              automatch-net-staging:
                 external: true
             EOF
 
@@ -70,6 +70,7 @@ jobs:
             cd automatch-frontend/staging
             echo "IMAGE_TAG=${{ github.sha }}" > .env
             echo "GITHUB_REPOSITORY=${{ github.repository }}" >> .env
+            docker network inspect automatch-net-staging >/dev/null 2>&1 || docker network create automatch-net-staging
             docker compose -p automatch-web-staging -f docker-compose.frontend.yml pull
             docker compose -p automatch-web-staging -f docker-compose.frontend.yml up -d
             docker system prune -af
