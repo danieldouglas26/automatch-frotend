@@ -124,12 +124,9 @@ export const BookingService = {
               b.status === 'REJECTED' ? 'REJEITADO' : b.status
     });
 
-    // Se o back retornar estrutura paginada (com campo content)
+    // Se o back retornar estrutura paginada (com campo content), retorna apenas o array
     if (data && Array.isArray(data.content)) {
-      return {
-        ...data,
-        content: data.content.map(mapBooking)
-      };
+      return data.content.map(mapBooking);
     }
 
     // Se retornar uma lista direta
@@ -137,7 +134,7 @@ export const BookingService = {
       return data.map(mapBooking);
     }
 
-    return data;
+    return [];
   },
 
   // Atualização de status de agendamento (PATCH)
